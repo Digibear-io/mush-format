@@ -9,8 +9,11 @@ export default (data: FormatData, next: Next) => {
     .reduce((acc: string, curr: string) => {
       curr.match(/^[^\s]/) // Does line start with a NOT space?
         ? (acc += "\n" + curr.trim())
-        : (acc += curr.trim());
+        : (acc += " " + curr.trim());
       return acc;
-    }, "");
+    }, "")
+    .replace(/\(\s+/g, "(")
+    .replace(/\)\s+\)/g, "))")
+    .replace(/\s+?=\s+?|=\s+?/g, "=");
   return next(null, data);
 };
