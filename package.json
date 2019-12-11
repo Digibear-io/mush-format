@@ -3,15 +3,18 @@
   "version": "0.1.0",
   "description": "A mush code pre-processor written in TypeScript",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "keywords": [
     "MUSH",
-    "MUX",
-    "Telnet",
-    "MUD"
+    "MUX"
   ],
   "author": "Lemuel L. Canady, Jr",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.4",
+    "node-fetch": "^2.6.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  }
 }
