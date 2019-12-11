@@ -1,5 +1,5 @@
 {
-  "name": "mush-format",
+  "name": "@digibear/mush-format",
   "version": "0.1.0",
   "description": "A mush code pre-processor written in TypeScript",
   "main": "index.js",
