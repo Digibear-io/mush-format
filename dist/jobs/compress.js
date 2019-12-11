@@ -14,7 +14,9 @@ exports.default = (data, next) => {
     }, "")
         .replace(/\(\s+/g, "(")
         .replace(/\)\s+\)/g, "))")
-        .replace(/\s+?=\s+?|=\s+?/g, "=");
+        .replace(/\s+?=\s+?|=\s+?/g, "=")
+        .replace(/\]\s+\)/g, "])")
+        .replace(/\s?%([rt])\s?/g, "%$1");
     return next(null, data);
 };
 //# sourceMappingURL=compress.js.map
