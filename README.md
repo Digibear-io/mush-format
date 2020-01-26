@@ -103,4 +103,4 @@ Translates to:
 ### Changelog
 
 - 0.1.0 - Initial Commit
-- 0.2.1 - Included functionality for plugins
+- 0.2.0 - Included functionality for plugins
