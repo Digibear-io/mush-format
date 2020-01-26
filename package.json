@@ -9,7 +9,7 @@
     "MUX"
   ],
   "files": [
-    "./dist/**/*",
+    "./dist/**",
     "./mushformatter.jpg"
   ],
   "author": "Lemuel L. Canady, Jr",
