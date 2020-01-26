@@ -2,6 +2,11 @@ import open from "./jobs/open";
 import render from "./jobs/render";
 import compress from "./jobs/compress";
 
+export interface Plugin {
+  step: "pre" | "open" | "render" | "compress" | "post";
+  run: (data: FormatData, next: Next) => Promise<void>;
+}
+
 export interface FormatData {
   input: string;
   scratch?: { [k: string]: any };
@@ -9,6 +14,10 @@ export interface FormatData {
   footers?: Object[];
   output?: string;
   cache: Map<string, any>;
+}
+
+export interface FormatOptions {
+  plugins?: Plugin[];
 }
 
 export type Next = (
@@ -21,7 +30,7 @@ export type Layer = (
   next: Next
 ) => Promise<FormatData | Error | void>;
 
-export async function format(text: string){
+export async function format(text: string, options: FormatOptions = {}) {
   const stack = new Map();
 
   // Preload the categories
@@ -42,6 +51,13 @@ export async function format(text: string){
   use("open", open);
   use("render", render);
   use("compress", compress);
+
+  // Install plugins
+  if (options.plugins) {
+    for (const plugin of options.plugins) {
+      use(plugin.step, plugin.run);
+    }
+  }
 
   /**
    * Process the indivitual steps of the formatter.
@@ -83,4 +99,4 @@ export async function format(text: string){
   await process("post", data);
 
   return data.output!.trim();
-};
+}

@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const open_1 = __importDefault(require("./jobs/open"));
 const render_1 = __importDefault(require("./jobs/render"));
 const compress_1 = __importDefault(require("./jobs/compress"));
-function format(text) {
+function format(text, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         const stack = new Map();
         // Preload the categories
@@ -34,6 +34,12 @@ function format(text) {
         use("open", open_1.default);
         use("render", render_1.default);
         use("compress", compress_1.default);
+        // Install plugins
+        if (options.plugins) {
+            for (const plugin of options.plugins) {
+                use(plugin.step, plugin.run);
+            }
+        }
         /**
          * Process the indivitual steps of the formatter.
          * @param step The current step.
@@ -70,5 +76,4 @@ function format(text) {
     });
 }
 exports.format = format;
-;
 //# sourceMappingURL=formatter.js.map
