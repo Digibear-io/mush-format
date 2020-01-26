@@ -3,14 +3,14 @@
   "version": "0.2.2",
   "description": "A mush code pre-processor written in TypeScript",
   "main": "/dist/formatter.js",
-  "scripts": {},
   "keywords": [
     "MUSH",
     "MUX"
   ],
   "files": [
-    "./dist/**",
-    "./mushformatter.jpg"
+    "dist/**/*.js",
+    "dist/**/*.ts",
+    "mushformatter.jpg"
   ],
   "author": "Lemuel L. Canady, Jr",
   "license": "MIT",
