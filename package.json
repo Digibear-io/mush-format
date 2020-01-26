@@ -1,6 +1,6 @@
 {
   "name": "@digibear/mush-format",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A mush code pre-processor written in TypeScript",
   "main": "/dist/formatter.js",
   "scripts": {},
@@ -8,7 +8,10 @@
     "MUSH",
     "MUX"
   ],
-  "files":["./dist", "formatter.jpg"],
+  "files": [
+    "./dist",
+    "formatter.jpg"
+  ],
   "author": "Lemuel L. Canady, Jr",
   "license": "MIT",
   "dependencies": {},
