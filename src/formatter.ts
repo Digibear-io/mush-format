@@ -21,7 +21,7 @@ export type Layer = (
   next: Next
 ) => Promise<FormatData | Error | void>;
 
-const format = async (text: string) => {
+export async function format(text: string){
   const stack = new Map();
 
   // Preload the categories
@@ -84,5 +84,3 @@ const format = async (text: string) => {
 
   return data.output!.trim();
 };
-
-export default format;

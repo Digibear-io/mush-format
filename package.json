@@ -8,6 +8,7 @@
     "MUSH",
     "MUX"
   ],
+  "files":["./dist", "formatter.jpg"],
   "author": "Lemuel L. Canady, Jr",
   "license": "MIT",
   "dependencies": {},
