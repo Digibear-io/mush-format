@@ -9,10 +9,10 @@ export interface Plugin {
 
 export interface FormatData {
   input: string;
-  scratch?: { [k: string]: any };
-  headers?: Object[];
-  footers?: Object[];
-  output?: string;
+  scratch: { [k: string]: any };
+  headers: Object[];
+  footers: Object[];
+  output: string;
   cache: Map<string, any>;
 }
 
@@ -98,5 +98,5 @@ export async function format(text: string, options: FormatOptions = {}) {
   await process("compress", data);
   await process("post", data);
 
-  return data.output!.trim();
+  return data?.output?.trim();
 }

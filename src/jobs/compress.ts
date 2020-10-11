@@ -2,7 +2,7 @@ import { FormatData, Next } from "../formatter";
 
 export default (data: FormatData, next: Next) => {
   data.output = data
-    .scratch!.current.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, " ") // remove comments
+    .scratch.current?.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, " ") // remove comments
     .replace(/^#.*/gim, "") // remove unevaluated tags.
     .split("\n")
     .filter(Boolean)
@@ -12,7 +12,7 @@ export default (data: FormatData, next: Next) => {
         : (acc += " " + curr.trim());
       return acc;
     }, "")
-    .replace(/\s\s+/g, " ")
+    .replace(/[\s\t]+/g, " ")
     .replace(/\(\s+/g, "(")
     .replace(/\)\s+\)/g, "))")
     .replace(/\s+?=\s+?|=\s+?/g, "=")
