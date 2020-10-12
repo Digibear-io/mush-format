@@ -98,7 +98,13 @@ Translates to:
 
 ### Todo
 
-- ~Ability to load plugins before running the formatter.~
+- [x] Ability to load plugins before running the formatter.
+- [x] Clean up Middleware System.
+- [] Add support for a format.json repo level config file.
+- [] Add #include tag for github repos.
+- [] Add #include for local repos.
+- [] Rhost specific installer plugin.
+- [] Add the ability to read from Github Repos
 
 ### Changelog
 

@@ -2,9 +2,9 @@ import { FormatData, Next } from "../formatter";
 
 export default (data: FormatData, next: Next) => {
   // Process headers
-  data.scratch.current = data.input.replace(
+  data.scratch.current = data.scratch.current.replace(
     /^#header\s+(.*)\s?=\s?(.*)/gim,
-    (...args) => {
+    (...args: string[]) => {
       data.headers!.push({ name: args[1], value: args[2] });
       return "";
     }
@@ -20,5 +20,5 @@ export default (data: FormatData, next: Next) => {
     }
   );
 
-  return next(null, data);
+  next();
 };
