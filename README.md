@@ -18,13 +18,13 @@ npm i @digibear/mush-format
 - `options: Plugin[]` Optional [plugins](#plugins) that can be included for that run of of the formatter.
 
 ```JavaScript
-import {formatter} from '@digibear/mush-format'
+import {format} from '@digibear/mush-format'
 import * as plugin from './plugin'
 import * as plugin2 from './plugin2'
 
 ( async () => {
   console.log(
-    await formatter(`
+    await format(`
 @nameformat #0=
   [if(hasflag(%#,json),,
    if(
@@ -59,24 +59,23 @@ The behavior of the formatter is configurable through the use of plugins.
   - **data** is passed from the formatter, and contains a snapshot of the current program state.
     - `data`
       - `input: string` The original text
-      - `scratch?: { [k: string]: any }` Random formatter storage object
-      - `headers?: Object[]` Headers to include
-      - `footers?: Object[]` Footers to include
+      - `scratch?: { k: string]: any }` Random formatter storage object
+      - `headers?: Map<string, any>` Headers to include
+      - `footers?: Map<string, any>` Footers to include
       - `output?: string;` The current state of the formatted text
       - `cache: Map<string, any>`
     - `next(error: Error | null, data)`
       - **error** A posisble error object. If there is no error it must be set null.
-      - **data** The data object to be passed back to the formatter.
 
 ```JavaScript
-
-// -- plugin.js
+// -- plugin1.js
 export const step = "pre";
 
 export function run(data, next) {
   console.log("Starting Formatter: ", New Date());
-  // next must be called, or the program will hang.
-  next(null, data)
+
+  // next must be called, or the program will end.
+  next()
 }
 ```
 
@@ -96,17 +95,21 @@ Translates to:
 &command.cmd #123=$things: @pemit %#=And Stuff
 ```
 
-### Todo
+## Todo
 
 - [x] Ability to load plugins before running the formatter.
 - [x] Clean up Middleware System.
-- [] Add support for a format.json repo level config file.
-- [] Add #include tag for github repos.
-- [] Add #include for local repos.
-- [] Rhost specific installer plugin.
-- [] Add the ability to read from Github Repos
+- [ ] Add support for a format.json repo level config file.
+- [ ] Add #include tag for github repos.
+- [ ] Add #include for local repos.
+- [ ] Rhost specific installer plugin.
+- [ ] Add the ability to read from Github Repos
 
-### Changelog
+## Changelog
 
 - 0.1.0 - Initial Commit
 - 0.3.1 - Included functionality for plugins
+
+## License
+
+MIT
