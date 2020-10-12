@@ -1,9 +1,12 @@
 import open from "./jobs/open";
 import render from "./jobs/render";
 import compress from "./jobs/compress";
+import pipeline, { Next, Pipe } from "./middleware";
 
+export type Step = "pre" | "open" | "render" | "compress" | "post";
+("");
 export interface Plugin {
-  step: "pre" | "open" | "render" | "compress" | "post";
+  step: Step;
   run: (data: FormatData, next: Next) => Promise<void>;
 }
 
@@ -20,66 +23,33 @@ export interface FormatOptions {
   plugins?: Plugin[];
 }
 
-export type Next = (
-  err: Error | null,
-  data?: FormatData
-) => Promise<FormatData | Error | void>;
-
-export type Layer = (
-  data: FormatData,
-  next: Next
-) => Promise<FormatData | Error | void>;
-
-export async function format(text: string, options: FormatOptions = {}) {
-  const stack = new Map();
+export async function format(text: string, { plugins }: FormatOptions = {}) {
+  const stack = new Map<Step, Pipe<FormatData>>();
 
   // Preload the categories
-  stack.set("pre", []);
-  stack.set("open", []);
-  stack.set("render", []);
-  stack.set("compress", []);
-  stack.set("post", []);
+  stack.set("pre", pipeline<FormatData>());
+  stack.set("open", pipeline<FormatData>());
+  stack.set("render", pipeline<FormatData>());
+  stack.set("compress", pipeline<FormatData>());
+  stack.set("post", pipeline<FormatData>());
 
   /**
    * Add a new Job(layer) pmtp tje stack.
    * @param step The current step to add the job to.
    * @param layer The job to be added
    */
-  const use = (step: string, layer: Layer): void => stack.get(step).push(layer);
 
   // install the middleware
-  use("open", open);
-  use("render", render);
-  use("compress", compress);
+  stack?.get("open")?.use(open);
+  stack?.get("render")?.use(render);
+  stack?.get("compress")?.use(compress);
 
   // Install plugins
-  if (options.plugins) {
-    for (const plugin of options.plugins) {
-      use(plugin.step, plugin.run);
+  if (plugins) {
+    for (const plugin of plugins) {
+      stack?.get(plugin.step)?.use(plugin.run);
     }
   }
-
-  /**
-   * Process the indivitual steps of the formatter.
-   * @param step The current step.
-   * @param data The formatting data passed between steps.
-   */
-  const process = async (step: string, data: FormatData) => {
-    let idx = 0;
-
-    const next = async (
-      err: Error | null,
-      data?: FormatData
-    ): Promise<FormatData | Error | void> => {
-      if (err) return Promise.reject(err);
-      if (idx >= stack.get(step).length) return Promise.resolve(data);
-
-      const layer = stack.get(step)[idx++];
-      await layer(data, next).catch((err: Error) => next(err));
-    };
-
-    await next(null, data);
-  };
 
   const data: FormatData = {
     cache: new Map(),
@@ -87,16 +57,17 @@ export async function format(text: string, options: FormatOptions = {}) {
     output: "",
     scratch: {},
     headers: [],
-    footers: []
+    footers: [],
   };
 
   // Okay, passing data around here and mutating it.  I'm sure
   // there's a more elegant way, but this'll work for now!
-  await process("pre", data);
-  await process("open", data);
-  await process("render", data);
-  await process("compress", data);
-  await process("post", data);
+  await stack.get("open")?.execute(data);
+  await stack.get("render")?.execute(data);
+  await stack.get("compress")?.execute(data);
+  await stack.get("post")?.execute(data);
 
-  return data?.output?.trim();
+  return data?.output;
 }
+
+export { Next };
