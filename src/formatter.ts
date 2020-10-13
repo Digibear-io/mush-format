@@ -1,14 +1,14 @@
 import open from "./jobs/open";
 import render from "./jobs/render";
 import compress from "./jobs/compress";
-import pipeline, { Next, Pipe } from "./middleware";
+import pipeline, { Middleware, Next, Pipe } from "./middleware";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
-("");
-export interface Plugin {
-  step: Step;
-  run: (data: FormatData, next: Next) => Promise<void>;
-}
+export type Plugin = (
+  step: Step,
+  context: FormatData,
+  next: Next
+) => Promise<void>;
 
 export interface FormatData {
   input: string;
@@ -19,19 +19,25 @@ export interface FormatData {
   cache: Map<string, any>;
 }
 
-export interface FormatOptions {
-  plugins?: Plugin[];
-}
+export default class Formatter {
+  plugins: Middleware<FormatData>[];
+  stack: Map<string, Pipe<FormatData>>;
 
-export async function format(text: string, { plugins }: FormatOptions = {}) {
-  const stack = new Map<Step, Pipe<FormatData>>();
+  constructor() {
+    this.stack = new Map<Step, Pipe<FormatData>>();
+    // Preload the categories
+    this.stack.set("pre", pipeline<FormatData>());
+    this.stack.set("open", pipeline<FormatData>());
+    this.stack.set("render", pipeline<FormatData>());
+    this.stack.set("compress", pipeline<FormatData>());
+    this.stack.set("post", pipeline<FormatData>());
+    this.plugins = [];
 
-  // Preload the categories
-  stack.set("pre", pipeline<FormatData>());
-  stack.set("open", pipeline<FormatData>());
-  stack.set("render", pipeline<FormatData>());
-  stack.set("compress", pipeline<FormatData>());
-  stack.set("post", pipeline<FormatData>());
+    // install the middleware
+    this.stack.get("open")?.use(open);
+    this.stack.get("render")?.use(render);
+    this.stack.get("compress")?.use(compress);
+  }
 
   /**
    * Add a new Job(layer) pmtp tje stack.
@@ -39,35 +45,31 @@ export async function format(text: string, { plugins }: FormatOptions = {}) {
    * @param layer The job to be added
    */
 
-  // install the middleware
-  stack?.get("open")?.use(open);
-  stack?.get("render")?.use(render);
-  stack?.get("compress")?.use(compress);
+  async format(text: string) {
+    const data: FormatData = {
+      cache: new Map(),
+      input: text,
+      output: "",
+      scratch: {},
+      headers: [],
+      footers: [],
+    };
 
-  // Install plugins
-  if (plugins) {
-    for (const plugin of plugins) {
-      stack?.get(plugin.step)?.use(plugin.run);
-    }
+    // Okay, passing data around here and mutating it.  I'm sure
+    // there's a more elegant way, but this'll work for now!
+    await this.stack.get("pre")?.execute(data);
+    await this.stack.get("open")?.execute(data);
+    await this.stack.get("render")?.execute(data);
+    await this.stack.get("compress")?.execute(data);
+    await this.stack.get("post")?.execute(data);
+
+    return data?.output;
   }
 
-  const data: FormatData = {
-    cache: new Map(),
-    input: text,
-    output: "",
-    scratch: {},
-    headers: [],
-    footers: [],
-  };
-
-  // Okay, passing data around here and mutating it.  I'm sure
-  // there's a more elegant way, but this'll work for now!
-  await stack.get("open")?.execute(data);
-  await stack.get("render")?.execute(data);
-  await stack.get("compress")?.execute(data);
-  await stack.get("post")?.execute(data);
-
-  return data?.output;
+  use(step: Step, ...plugins: Middleware<FormatData>[]) {
+    this.stack.get(step)?.use(...plugins);
+    return this;
+  }
 }
 
 export { Next };

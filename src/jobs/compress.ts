@@ -18,6 +18,8 @@ export default (data: FormatData, next: Next) => {
     .replace(/\s+?=\s+?|=\s+?/g, "=")
     .replace(/\]\s+\)/g, "])")
     .replace(/\]\s?\[/g, "][")
-    .replace(/\s?%([rt])\s?/g, "%$1");
+    .replace(/\s?%([rt])\s?/g, "%$1")
+    .replace(/\n-/g, "\n");
+
   next();
 };
