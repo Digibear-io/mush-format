@@ -24,7 +24,7 @@
     "url": "https://github.com/digibear-io/mush-format/issues/"
   },
   "scripts": {
-    "build": "npx tsc -p ./tsconfig.json",
+    "build": "rm -rf ./dist && npx tsc -p ./tsconfig.json",
     "test": "jest"
   },
   "dependencies": {
