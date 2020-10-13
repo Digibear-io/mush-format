@@ -4,46 +4,54 @@
 
 a Typescript library designed to take mushcode from something readable to something you can quote directly into your game.
 
+**Table Of Contents**<br />
+[Installation](#install) <br/>
+[Usage](#usage) <br />
+[CLI](#cli) <br />
+[plugins](#plugins) <br />
+[Formatting Rules](#formatting-rules) <br />
+[Meta Tags](#meta-tags) <br />
+[Development](#development)<br />
+[Todo](#todo)<br />
+[Change Log](#change-log)<br/>
+[License](#license)
+
 ## Install
 
-with npm, save as a dependancy
+with your preferred package manager, install the library into your project.
 
 ```
 npm i @digibear/mush-format
+
+or
+
+yarn add @digibear/mush-format
 ```
 
 ## Usage
 
-- `text: string` The text to be formatted.
-- `options: Plugin[]` Optional [plugins](#plugins) that can be included for that run of of the formatter.
-
 ```JavaScript
-import { format } from '@digibear/mush-format'
-import * as plugin from './plugin'
-import * as plugin2 from './plugin2'
+import formatter from '@digibear/mush-format'
+import plugin from './plugin'
+import plugin2 from './plugin2'
 
-( async () => {
-  console.log(
-    await format(`
-@nameformat #0=
-  [if(hasflag(%#,json),,
-   if(
-      orflags(%#,iWa),
-      [cname(%!)]%(%![flags(%!)]%),
-      [cname(%!)]
-    )
-  )]`,
-  {
-    plugins: [plugin, plugin2]
-  }
-    )
-  )
-})()
-  .catch(error => console.log(error));
+const code = `
+// This line won't render
+&command.cmd #123 = $things:
+  @pemit %#=And Stuff. // this line will be added to the first.`;
 
-// -> @nameformat #0=[if(hasflag(%#,json),, if(orflags(%#,iWa), [cname(%!)]%(%![flags(%!)]%), [cname(%!)]))]
 
+formatter
+  .format(code)
+  .then(results => consile.log(results))
+  .catch(error => console.error(error));
+
+// -> &command.cmd #123 = $things: @pemit %# = And Stuff.
 ```
+
+## CLI
+
+Coming soon
 
 ## Plugins
 
@@ -55,28 +63,47 @@ The behavior of the formatter is configurable through the use of plugins.
   - **render** - Render (and define new) tags in the text to be formatted.
   - **compress** - Strip formatting and compress the text down.
   - **post** - After the formatting is complete.
-- `async run(data, next)` - The body of the plugin.
-  - **data** is passed from the formatter, and contains a snapshot of the current program state.
-    - `data`
+- `async run(context, next)` - The body of the plugin.
+  - **context** is passed from the formatter, and contains a snapshot of the current program state.
+    - `context`
       - `input: string` The original text
       - `scratch?: { [k: string]: any }` Random formatter storage object
       - `headers?: Map<string, any>` Headers to include
       - `footers?: Map<string, any>` Footers to include
       - `output?: string;` The current state of the formatted text
-      - `cache: Map<string, any>`
-    - `next(error: Error | null, data)`
-      - **error** A posisble error object. If there is no error it must be set null.
+      - `cache: Map<string, string>`
+    - `next()` Force the program to move onto the next piece of middleware within the middleware pipeline.
+
+**`plugin.js`**
 
 ```JavaScript
+export default (ctx, next) => {
+  // Mark the start date/time for the formatting job.
+  console.log(`Fortmatter started - ${new Date()}`);
 
-// -- plugin.js
-export const step = "pre";
+  // Copy the raw input to a temp object on scratch to work with.
+  context.input = context.scratch.current;
 
-export function run(data, next) {
-  console.log("Starting Formatter: ", New Date());
-  // next must be called, or the program will hang.
-  next(null, data)
+  // Move onto the next process in the middleware pipeline.
+  next();
 }
+```
+
+**`index.js`**
+
+```JS
+import startLog from './plugin1';
+import formatter from '@digibear/mush-format';
+
+// Install any middleware.
+formatter.use("pre", startlog);
+
+formatter.format(`
+// This is an example file!
+&cmd.awesome #134 =
+  @pemit %# = This is example code!`);
+
+// -> &cmd.awesome #134 = @pemit %# = this is example code!
 ```
 
 ## Formatting Rules
@@ -95,17 +122,33 @@ Translates to:
 &command.cmd #123=$things: @pemit %#=And Stuff
 ```
 
+## Meta Tags
+
+Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
+
+### `#include`
+
+The include meta-tag lets you inject text from a url into your document before the entire thing is processed. This is great for making your code modular. Files are cached when first accessed during the build process to protect against reduntand code bloat.
+
+```
+// This will pull text from a file hosted on github!
+// Support for feeding the formatter a full repo is coming soon!
+#include https://path.to/code/input.mush
+
+// This line won't render
+&command.cmd #123 = $things:
+  @pemit %#=And Stuff. // this line will be added to the first.
+```
+
 ### Todo
 
 - [x] Ability to load plugins before running the formatter.
 - [x] Clean up Middleware System.
 - [ ] Add support for a format.json repo level config file.
-- [ ] Add #include tag for github repos.
+- [x] Add #include tag for github repos.
 - [ ] Add #include for local repos.
-- [ ] Rhost specific installer plugin.
-- [ ] Add the ability to read from Github Repos
+- [x] Add the ability to read from Github Repos
 
-### Changelog
+## License
 
-- 0.1.0 - Initial Commit
-- 0.3.1 - Included functionality for plugins
+MIT
