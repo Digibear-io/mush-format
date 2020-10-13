@@ -1,8 +1,11 @@
-export type Next = () => Promise<void> | void;
-export type Middleware<T> = (context: T, next: Next) => Promise<void> | void;
+export type Next = () => Promise<any> | any;
+export type Middleware<T> = (
+  context: T,
+  next: Next
+) => Promise<void | T> | void | T;
 export type Pipe<T> = {
   use: (...middlewares: Middleware<T>[]) => void;
-  execute: (context: T) => Promise<void>;
+  execute: (context: T) => Promise<void | T>;
 };
 
 export default function Pipe<T>(...middlewares: Middleware<T>[]): Pipe<T> {
@@ -15,20 +18,23 @@ export default function Pipe<T>(...middlewares: Middleware<T>[]): Pipe<T> {
   const execute: Pipe<T>["execute"] = async (context) => {
     let prevIndex = -1;
 
-    const runner = async (index: number): Promise<void> => {
+    const runner = async (index: number, context: T): Promise<void | T> => {
       if (index === prevIndex) {
         throw new Error("next() already called.");
       }
+
+      if (index === stack.length) return context;
 
       prevIndex = index;
 
       const middleware = stack[index];
 
       if (middleware) {
-        await middleware(context, () => runner(index + 1));
+        await middleware(context, () => runner(index + 1, context));
       }
     };
-    await runner(0);
+    const response = await runner(0, context);
+    if (response) return response;
   };
 
   return { use, execute };
