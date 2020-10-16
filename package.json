@@ -24,8 +24,9 @@
     "url": "https://github.com/digibear-io/mush-format/issues/"
   },
   "scripts": {
-    "build": "npx tsc -p ./tsconfig.json",
-    "test": "jest"
+    "build": "yarn tsc -p ./tsconfig.json",
+    "test": "jest",
+    "prepublish": "yarn run build"
   },
   "dependencies": {
     "isomorphic-fetch": "^3.0.0",
