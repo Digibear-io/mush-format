@@ -25,7 +25,8 @@
   },
   "scripts": {
     "build": "rm -rf ./dist && npx tsc -p ./tsconfig.json",
-    "test": "jest"
+    "test": "jest",
+    "prepublish": "yarn run build"
   },
   "dependencies": {
     "isomorphic-fetch": "^3.0.0",
