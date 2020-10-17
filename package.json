@@ -2,7 +2,7 @@
   "name": "@digibear/mush-format",
   "version": "0.6.2",
   "description": "A mush code pre-processor written in TypeScript",
-  "main": "/dist/formatter.js",
+  "main": "dist/formatter.js",
   "keywords": [
     "MUSH",
     "MUX",
