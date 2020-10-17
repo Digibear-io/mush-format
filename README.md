@@ -32,14 +32,11 @@ yarn add @digibear/mush-format
 
 ```JavaScript
 import formatter from '@digibear/mush-format'
-import plugin from './plugin'
-import plugin2 from './plugin2'
 
 const code = `
 // This line won't render
 &command.cmd #123 = $things:
   @pemit %#=And Stuff. // this line will be added to the first.`;
-
 
 formatter
   .format(code)
@@ -126,19 +123,7 @@ Translates to:
 
 Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
 
-### `#include`
-
-The include meta-tag lets you inject text from a url into your document before the entire thing is processed. This is great for making your code modular. Files are cached when first accessed during the build process to protect against reduntand code bloat.
-
-```
-// This will pull text from a file hosted on github!
-// Support for feeding the formatter a full repo is coming soon!
-#include https://path.to/code/input.mush
-
-// This line won't render
-&command.cmd #123 = $things:
-  @pemit %#=And Stuff. // this line will be added to the first.
-```
+### Coming Soon
 
 ### Todo
 
