@@ -42,6 +42,7 @@ export default async (data: FormatData, next: Next) => {
     return "";
   }
 
+  // Handle any #includes
   data.scratch.current = await replace(
     data.input,
     /#include\s+?(.*)/g,

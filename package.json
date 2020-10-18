@@ -33,7 +33,7 @@
     "string-replace-async": "^2.0.0"
   },
   "devDependencies": {
-    "@types/isomorphic-fetch": "^0.0.35",
+    "@types/isomorphicS-fetch": "^0.0.35",
     "@types/jest": "^26.0.14",
     "babel-jest": "^26.5.2",
     "jest": "^26.5.3",
