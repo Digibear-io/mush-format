@@ -7,18 +7,12 @@ export default (data: FormatData, next: Next) => {
     .split("\n")
     .filter(Boolean)
     .reduce((acc: string, curr: string) => {
-      curr.match(/^\s/g) // Does line start with a NOT space?
-        ? (acc += " " + curr)
+      curr.match(/^\s+/) // Does line start with a space?
+        ? (acc += curr.trimLeft())
         : (acc += "\n" + curr);
       return acc;
     }, "")
     .replace(/[ \t]+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\)\s+\)/g, "))")
-    .replace(/\s+?=\s+?|=\s+?/g, "=")
-    .replace(/\]\s+\)/g, "])")
-    .replace(/\]\s?\[/g, "][")
-    .replace(/\s?%([rt])\s?/g, "%$1")
     .replace(/\n-/g, "\n");
 
   next();
