@@ -11,7 +11,6 @@ export default (data: FormatData, next: Next) => {
   );
 
   // Process footers
-
   data.scratch.current = data.scratch.current.replace(
     /^#footer\s+(.*)\s?=\s?(.*)/gim,
     (...args: string[]) => {
