@@ -19,5 +19,20 @@ export default (data: FormatData, next: Next) => {
     }
   );
 
+  // Look for the @debug directive.
+  data.scratch.current = data.scratch.current.replace(/@debug/g, () => {
+    data.debug = true;
+    return "";
+  });
+
+  // Expose any debug statements, if debugging is true.
+  data.scratch.current = data.scratch.current.replace(
+    /#debug\s*?{([\s\S]+)\n}\s*?/gi,
+    (...args: string[]) => {
+      if (data.debug) return args[1];
+      return "";
+    }
+  );
+
   next();
 };

@@ -105,7 +105,7 @@ formatter.format(`
 
 ## Formatting Rules
 
-The rules of the game are pretty simple. If the first column of a line isn't a comment, space or newline, it interprets it as the beginning of a line. If your line begins with any of the above things, it'll be removed. An example:
+The rules of the game are pretty simple! If the first column of a line isn't a comment, space or newline, it interprets it as the beginning of a line. If your line begins with any of the above things, it'll be removed. An example:
 
 ```
 // This line won't render
@@ -123,7 +123,22 @@ Translates to:
 
 Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
 
-### Coming Soon
+### @debug
+
+The @debug directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
+
+```
+@debug
+
+// ...
+
+#debug {
+
+think %chThis will be included in the processed code!
+
+} // Make sure the closing curly-brace is the first character on
+  // a new line!
+```
 
 ### Todo
 

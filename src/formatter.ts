@@ -13,6 +13,7 @@ export type Plugin = (
 export interface FormatData {
   input: string;
   scratch: { [k: string]: any };
+  debug?: boolean;
   headers: Object[];
   footers: Object[];
   output: string;
