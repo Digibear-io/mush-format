@@ -22,3 +22,9 @@ test("Headers and footers render in the file.", async () => {
   expect(results).toContain("@@ foobar: baz");
   expect(results).toContain("@@ footer: footer");
 });
+
+test("#include pulls in a github archive", async () => {
+  expect(
+    await formatter.format("#include git: lcanady/archive-test")
+  ).toContain("file 4!");
+});

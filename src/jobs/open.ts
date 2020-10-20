@@ -8,7 +8,7 @@ export default async (data: FormatData, next: Next) => {
   // Replace all references of #insert with compiled files recursively.
 
   const read = async (path: string): Promise<string | undefined> => {
-    const match = path.match(/^gi[thub]+:\s*?(.*)\/(.*)$/i);
+    const match = path.match(/gi[thub]+:\s+?(.*)\/(.*)$/i);
 
     try {
       // Check to see if it's a github link
@@ -31,22 +31,24 @@ export default async (data: FormatData, next: Next) => {
       } else {
         // If No, check to see if if fetching the file with the base
         // directory works.
-        const url = new URL(path, data.scratch.base).toString();
-        if (validURL(url)) {
-          if (!data.cache.has(url)) {
-            const results = await _fetch(url);
-            const text = await results.text();
-            data.cache.set(url, text);
+        try {
+          const url = new URL(path, data.scratch.base).toString();
+          if (validURL(url)) {
+            if (!data.cache.has(url)) {
+              const results = await _fetch(url);
+              const text = await results.text();
+              data.cache.set(url, text);
 
-            // If yes, recursively check the file for more includes.
-            data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-            return scan(text);
-          } else {
-            // Already scanned,  Doesn't need further processing
-            data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-            return data.cache.get(url);
+              // If yes, recursively check the file for more includes.
+              data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
+              return scan(text);
+            } else {
+              // Already scanned,  Doesn't need further processing
+              data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
+              return data.cache.get(url);
+            }
           }
-        }
+        } catch {}
       }
     } catch (error) {
       throw error;
