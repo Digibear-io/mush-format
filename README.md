@@ -2,6 +2,8 @@
 
 ![header](mushformatter.jpg)
 
+> This repo is still very much under development. While the API is pretty stable now, minor things are likely to change before the API hits stable `1.0.0`.
+
 a Typescript library designed to take mushcode from something readable to something you can quote directly into your game.
 
 **Table Of Contents**<br />
@@ -13,7 +15,6 @@ a Typescript library designed to take mushcode from something readable to someth
 [Meta Tags](#meta-tags) <br />
 [Development](#development)<br />
 [Todo](#todo)<br />
-[Change Log](#change-log)<br/>
 [License](#license)
 
 ## Install
@@ -35,7 +36,7 @@ import formatter from '@digibear/mush-format'
 
 const code = `
 // This line won't render
-&command.cmd #123 = $things:
+&command.cmd #123=$things:
   @pemit %#=And Stuff. // this line will be added to the first.`;
 
 formatter
@@ -43,7 +44,7 @@ formatter
   .then(results => consile.log(results))
   .catch(error => console.error(error));
 
-// -> &command.cmd #123 = $things: @pemit %# = And Stuff.
+// -> &command.cmd #123=$things:@pemit %# = And Stuff.
 ```
 
 ## CLI
@@ -63,6 +64,7 @@ The behavior of the formatter is configurable through the use of plugins.
 - `async run(context, next)` - The body of the plugin.
   - **context** is passed from the formatter, and contains a snapshot of the current program state.
     - `context`
+      - `debug?: Boolean` An indicator for `#debug` meta-tag evaluation.
       - `input: string` The original text
       - `scratch?: { [k: string]: any }` Random formatter storage object
       - `headers?: Map<string, any>` Headers to include
@@ -74,22 +76,19 @@ The behavior of the formatter is configurable through the use of plugins.
 **`plugin.js`**
 
 ```JavaScript
-export default (ctx, next) => {
-  // Mark the start date/time for the formatting job.
-  console.log(`Fortmatter started - ${new Date()}`);
+export default (ctx: FormatData, next: Next) => {
+  // Mark the start date/time for the formatter run,
+  // and copy the contents of ctx.input into a working
+  // temp property on the ctx object.
+  ctx.context.scratch.current = `Fortmatter started - ${new Date()}\n` + ctx.input;
 
-  // Copy the raw input to a temp object on scratch to work with.
-  context.input = context.scratch.current;
-
-  // Move onto the next process in the middleware pipeline.
-  next();
+next();
 }
 ```
 
 **`index.js`**
 
 ```JS
-import startLog from './plugin1';
 import formatter from '@digibear/mush-format';
 
 // Install any middleware.
@@ -97,10 +96,11 @@ formatter.use("pre", startlog);
 
 formatter.format(`
 // This is an example file!
-&cmd.awesome #134 =
-  @pemit %# = This is example code!`);
+&cmd.awesome #134=
+  @pemit %#=This is example code!`);
 
-// -> &cmd.awesome #134 = @pemit %# = this is example code!
+// -> Formatter started - Tue Oct 20 2020 12:52:23 GMT-0700 (Pacific Daylight Time)
+// -> &cmd.awesome #134=@pemit %#=this is example code!
 ```
 
 ## Formatting Rules
@@ -123,7 +123,17 @@ Translates to:
 
 Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
 
-### @debug
+### `#include git[hub]: <user>/<repo>`
+
+`#include` allows you to add mushcode contained in a github repo into your code before processing. The repo must have a `main` branch with a file named `index.mush` - which will serve as the main entry point for your build. Within the repo you can use relative paths (to remain compatible with building locally). Take a look at my [Example Repo](https://github.com/lcanady/archive-test.git) for a dummy implementation.
+
+```
+#include git: lcanady/archive-test
+
+// ... More code ...
+```
+
+### `@debug`
 
 The @debug directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
 
@@ -144,7 +154,6 @@ think %chThis will be included in the processed code!
 
 - [x] Ability to load plugins before running the formatter.
 - [x] Clean up Middleware System.
-- [ ] Add support for a format.json repo level config file.
 - [x] Add #include tag for github repos.
 - [ ] Add #include for local repos.
 - [x] Add the ability to read from Github Repos

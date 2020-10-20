@@ -10,12 +10,17 @@ export type Plugin = (
   next: Next
 ) => Promise<void>;
 
+export interface Header {
+  name: string;
+  value: string;
+}
+
 export interface FormatData {
   input: string;
   scratch: { [k: string]: any };
   debug?: boolean;
-  headers: Object[];
-  footers: Object[];
+  headers: Header[];
+  footers: Header[];
   output: string;
   cache: Map<string, any>;
 }
@@ -64,7 +69,21 @@ export default class Formatter {
     await this.stack.get("compress")?.execute(data);
     await this.stack.get("post")?.execute(data);
 
-    return data?.output;
+    data.output =
+      data.headers
+        .map((header) => `@@ ${header.name}: ${header.value}`)
+        .join("\n") +
+      "\n" +
+      data.output;
+
+    data.output =
+      data.output +
+      "\n\n" +
+      data.footers
+        .map((footer) => `@@ ${footer.name}: ${footer.value}`)
+        .join("\n");
+
+    return data.output;
   }
 
   use(step: Step, ...plugins: Middleware<FormatData>[]) {
