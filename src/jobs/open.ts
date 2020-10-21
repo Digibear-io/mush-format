@@ -55,10 +55,36 @@ export default async (ctx: Context, next: Next) => {
   };
 
   // Scan for includes and open the the file.
-  function scan(text: string) {
-    return replace(text, /#include\s+?(.*)/g, async (...args: string[]) => {
-      return (await read(args[1])) || "";
-    });
+  async function scan(text: string) {
+    // Open files
+    let results = await replace(
+      text,
+      /#file\s+?(.*)/gi,
+      async (...args: string[]) => {
+        const res = (await read(args[1])) || "";
+        if (res) {
+          return (
+            "\n-\n" +
+            res
+              .trim()
+              .split("\n")
+              .map((line) => `@@ ${line}`)
+              .join("\n") +
+            "\n-\n"
+          );
+        }
+
+        return "";
+      }
+    );
+
+    return await replace(
+      results,
+      /#include\s+?(.*)/g,
+      async (...args: string[]) => {
+        return (await read(args[1])) || "";
+      }
+    );
   }
 
   // Kick off the recursive loop.

@@ -25,7 +25,7 @@ export interface Context {
   cache: Map<string, any>;
 }
 
-export default class Formatter {
+export class Formatter {
   plugins: Middleware<Context>[];
   stack: Map<string, Pipe<Context>>;
 
@@ -91,5 +91,7 @@ export default class Formatter {
     return this;
   }
 }
+
+export default new Formatter();
 
 export { Next };
