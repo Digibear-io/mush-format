@@ -32,17 +32,16 @@ yarn add @digibear/mush-format
 ## Usage
 
 ```JavaScript
-import formatter from '@digibear/mush-format'
+import { format } from "@digibear/mush-format";
 
 const code = `
 // This line won't render
 &command.cmd #123=$things:
   @pemit %#=And Stuff. // this line will be added to the first.`;
 
-formatter
-  .format(code)
-  .then(results => consile.log(results))
-  .catch(error => console.error(error));
+format(code)
+  .then(console.log)
+  .catch(console.error);
 
 // -> &command.cmd #123=$things:@pemit %# = And Stuff.
 ```
@@ -62,21 +61,22 @@ The behavior of the formatter is configurable through the use of plugins.
   - **compress** - Strip formatting and compress the text down.
   - **post** - After the formatting is complete.
 - `async run(context, next)` - The body of the plugin.
-  - **context** is passed from the formatter, and contains a snapshot of the current program state.
-    - `context`
-      - `debug?: Boolean` An indicator for `#debug` meta-tag evaluation.
-      - `input: string` The original text
-      - `scratch?: { [k: string]: any }` Random formatter storage object
-      - `headers?: Map<string, any>` Headers to include
-      - `footers?: Map<string, any>` Footers to include
-      - `output?: string;` The current state of the formatted text
-      - `cache: Map<string, string>`
+  - **`context`** is passed from the formatter, and contains a snapshot of the current program state.
+    - `debug?: Boolean` An indicator for `#debug` meta-tag evaluation.
+    - `input: string` The original text
+    - `scratch?:` Random formatter storage object
+      - `current: string` The current edit of the combined code.
+      - `[k: string]: any`
+    - `headers?: Map<string, any>` Headers to include
+    - `footers?: Map<string, any>` Footers to include
+    - `output?: string;` The current state of the formatted text
+    - `cache: Map<string, string>`
     - `next()` Force the program to move onto the next piece of middleware within the middleware pipeline.
 
 **`plugin.js`**
 
 ```JavaScript
-export default (ctx: FormatData, next: Next) => {
+export default (ctx: Context, next: Next) => {
   // Mark the start date/time for the formatter run,
   // and copy the contents of ctx.input into a working
   // temp property on the ctx object.
@@ -89,17 +89,18 @@ next();
 **`index.js`**
 
 ```JS
-import formatter from '@digibear/mush-format';
+import format from '@digibear/mush-format';
+import startLog from "../plugins/plugin"
 
 // Install any middleware.
-formatter.use("pre", startlog);
+formatter.use("pre", startLog);
 
 formatter.format(`
 // This is an example file!
 &cmd.awesome #134=
   @pemit %#=This is example code!`);
 
-// -> Formatter started - Tue Oct 20 2020 12:52:23 GMT-0700 (Pacific Daylight Time)
+// -> Formatter started - Tue Oct 20 2020 12:52:23 ...
 // -> &cmd.awesome #134=@pemit %#=this is example code!
 ```
 
@@ -111,12 +112,21 @@ The rules of the game are pretty simple! If the first column of a line isn't a c
 // This line won't render
 &command.cmd #123 = $things:
   @pemit %#=And Stuff. // this line will be added to the first.
+
+- // A single dash on a line makes an extra return in
+  // the compressed code
+
+@@ This comment will appear in the compressed code.
+@@ Great for leaving notes in your final compressed code block!
 ```
 
 Translates to:
 
 ```
 &command.cmd #123=$things: @pemit %#=And Stuff
+
+@@ This comment will appear in the compressed code.
+@@ Great for leaving notes in your final compressed code block!
 ```
 
 ## Meta Tags
@@ -133,6 +143,30 @@ Meta tags are a way to add extra functionality to your formatted mushcode script
 // ... More code ...
 ```
 
+### `#file /path/to/file.txt`
+
+This meta-tag will import a file like `#include` but will add mush comments `@@` to every line, making a note for anyone reading through your compressed code source. This is great for offering things like install instructions, and licenses.
+
+**`text.txt`**
+
+```
+This is a test file.
+It's a multi-line file.
+```
+
+**`index.mush`**
+
+```
+#file ./text.txt
+```
+
+**results**
+
+```
+@@ This is a test file.
+@@ It's a multi-line file.
+```
+
 ### `@debug`
 
 The @debug directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
@@ -144,7 +178,7 @@ The @debug directive tells the preprocessor that you would like to include any `
 
 #debug {
 
-think %chThis will be included in the processed code!
+think %chThis will be included in the processed code!%cn
 
 } // Make sure the closing curly-brace is the first character on
   // a new line!

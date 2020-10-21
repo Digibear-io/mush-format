@@ -1,7 +1,7 @@
-import { FormatData, Next } from "../formatter";
+import { Context, Next } from "../formatter";
 
-export default (data: FormatData, next: Next) => {
-  data.output = data.scratch.current
+export default (ctx: Context, next: Next) => {
+  ctx.output = ctx.scratch.current
     ?.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, " ") // remove comments
     .replace(/^#.*/gim, "") // remove unevaluated tags.
     .split("\n")

@@ -6,7 +6,7 @@ import pipeline, { Middleware, Next, Pipe } from "./middleware";
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
   step: Step,
-  context: FormatData,
+  context: Context,
   next: Next
 ) => Promise<void>;
 
@@ -15,7 +15,7 @@ export interface Header {
   value: string;
 }
 
-export interface FormatData {
+export interface Context {
   input: string;
   scratch: { [k: string]: any };
   debug?: boolean;
@@ -25,18 +25,18 @@ export interface FormatData {
   cache: Map<string, any>;
 }
 
-export default class Formatter {
-  plugins: Middleware<FormatData>[];
-  stack: Map<string, Pipe<FormatData>>;
+export class Formatter {
+  plugins: Middleware<Context>[];
+  stack: Map<string, Pipe<Context>>;
 
   constructor() {
-    this.stack = new Map<Step, Pipe<FormatData>>();
+    this.stack = new Map<Step, Pipe<Context>>();
     // Preload the categories
-    this.stack.set("pre", pipeline<FormatData>());
-    this.stack.set("open", pipeline<FormatData>());
-    this.stack.set("render", pipeline<FormatData>());
-    this.stack.set("compress", pipeline<FormatData>());
-    this.stack.set("post", pipeline<FormatData>());
+    this.stack.set("pre", pipeline<Context>());
+    this.stack.set("open", pipeline<Context>());
+    this.stack.set("render", pipeline<Context>());
+    this.stack.set("compress", pipeline<Context>());
+    this.stack.set("post", pipeline<Context>());
     this.plugins = [];
 
     // install the middleware
@@ -52,7 +52,7 @@ export default class Formatter {
    */
 
   async format(text: string) {
-    const data: FormatData = {
+    const ctx: Context = {
       cache: new Map(),
       input: text,
       output: "",
@@ -63,33 +63,35 @@ export default class Formatter {
 
     // Okay, passing data around here and mutating it.  I'm sure
     // there's a more elegant way, but this'll work for now!
-    await this.stack.get("pre")?.execute(data);
-    await this.stack.get("open")?.execute(data);
-    await this.stack.get("render")?.execute(data);
-    await this.stack.get("compress")?.execute(data);
-    await this.stack.get("post")?.execute(data);
+    await this.stack.get("pre")?.execute(ctx);
+    await this.stack.get("open")?.execute(ctx);
+    await this.stack.get("render")?.execute(ctx);
+    await this.stack.get("compress")?.execute(ctx);
+    await this.stack.get("post")?.execute(ctx);
 
-    data.output =
-      data.headers
+    ctx.output =
+      ctx.headers
         .map((header) => `@@ ${header.name}: ${header.value}`)
         .join("\n") +
       "\n" +
-      data.output;
+      ctx.output;
 
-    data.output =
-      data.output +
+    ctx.output =
+      ctx.output +
       "\n\n" +
-      data.footers
+      ctx.footers
         .map((footer) => `@@ ${footer.name}: ${footer.value}`)
         .join("\n");
 
-    return data.output;
+    return ctx.output;
   }
 
-  use(step: Step, ...plugins: Middleware<FormatData>[]) {
+  use(step: Step, ...plugins: Middleware<Context>[]) {
     this.stack.get(step)?.use(...plugins);
     return this;
   }
 }
+
+export default new Formatter();
 
 export { Next };
