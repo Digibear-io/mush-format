@@ -18,7 +18,9 @@ export default async (ctx: Context, next: Next) => {
 
         ctx.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${match[2]}/main/`;
         if (validURL(`${ctx.scratch.base}/index.mush`)) {
-          const results = await _fetch(`${ctx.scratch.base}/index.mush`);
+          const results = await _fetch(
+            `${ctx.scratch.base}/index.mush`
+          ).catch();
           if (!ctx.cache.has(`${ctx.scratch.base}/index.mush`)) {
             // Save the file to the cache.
             const text = await results.text();
