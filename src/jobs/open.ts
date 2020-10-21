@@ -1,10 +1,10 @@
 import _fetch from "isomorphic-fetch";
 import replace from "string-replace-async";
 
-import { FormatData, Next } from "../formatter";
+import { Context, Next } from "../formatter";
 import { validURL } from "../utilities";
 
-export default async (data: FormatData, next: Next) => {
+export default async (ctx: Context, next: Next) => {
   // Replace all references of #insert with compiled files recursively.
 
   const read = async (path: string): Promise<string | undefined> => {
@@ -16,13 +16,13 @@ export default async (data: FormatData, next: Next) => {
         // If yes, set the base directory, and pull the first file from
         // the github repo. Cache the results.
 
-        data.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${match[2]}/main/`;
-        if (validURL(`${data.scratch.base}/index.mush`)) {
-          const results = await _fetch(`${data.scratch.base}/index.mush`);
-          if (!data.cache.has(`${data.scratch.base}/index.mush`)) {
+        ctx.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${match[2]}/main/`;
+        if (validURL(`${ctx.scratch.base}/index.mush`)) {
+          const results = await _fetch(`${ctx.scratch.base}/index.mush`);
+          if (!ctx.cache.has(`${ctx.scratch.base}/index.mush`)) {
             // Save the file to the cache.
             const text = await results.text();
-            data.cache.set(`${data.scratch.base}/index.mush`, text);
+            ctx.cache.set(`${ctx.scratch.base}/index.mush`, text);
 
             // scan the file for more includes.
             return scan(text);
@@ -31,28 +31,25 @@ export default async (data: FormatData, next: Next) => {
       } else {
         // If No, check to see if if fetching the file with the base
         // directory works.
-        try {
-          const url = new URL(path, data.scratch.base).toString();
-          if (validURL(url)) {
-            if (!data.cache.has(url)) {
-              const results = await _fetch(url);
-              const text = await results.text();
-              data.cache.set(url, text);
 
-              // If yes, recursively check the file for more includes.
-              data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-              return scan(text);
-            } else {
-              // Already scanned,  Doesn't need further processing
-              data.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-              return data.cache.get(url);
-            }
+        const url = new URL(path, ctx.scratch.base).toString();
+        if (validURL(url)) {
+          if (!ctx.cache.has(url)) {
+            const results = await _fetch(url);
+            const text = await results.text();
+            ctx.cache.set(url, text);
+
+            // If yes, recursively check the file for more includes.
+            ctx.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
+            return scan(text);
+          } else {
+            // Already scanned,  Doesn't need further processing
+            ctx.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
+            return ctx.cache.get(url);
           }
-        } catch {}
+        }
       }
-    } catch (error) {
-      throw error;
-    }
+    } catch {}
   };
 
   // Scan for includes and open the the file.
@@ -63,7 +60,7 @@ export default async (data: FormatData, next: Next) => {
   }
 
   // Kick off the recursive loop.
-  data.scratch.current = await scan(data.input);
+  ctx.scratch.current = await scan(ctx.input);
 
   next();
 };

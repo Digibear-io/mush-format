@@ -76,7 +76,7 @@ The behavior of the formatter is configurable through the use of plugins.
 **`plugin.js`**
 
 ```JavaScript
-export default (ctx: FormatData, next: Next) => {
+export default (ctx: Context, next: Next) => {
   // Mark the start date/time for the formatter run,
   // and copy the contents of ctx.input into a working
   // temp property on the ctx object.
@@ -144,7 +144,7 @@ The @debug directive tells the preprocessor that you would like to include any `
 
 #debug {
 
-think %chThis will be included in the processed code!
+think %chThis will be included in the processed code!%cn
 
 } // Make sure the closing curly-brace is the first character on
   // a new line!
