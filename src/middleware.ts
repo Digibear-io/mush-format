@@ -8,7 +8,7 @@ export type Pipe<T> = {
   execute: (context: T) => Promise<void | T>;
 };
 
-export default function Pipe<T>(...middlewares: Middleware<T>[]): Pipe<T> {
+export default function <T>(...middlewares: Middleware<T>[]): Pipe<T> {
   const stack: Middleware<T>[] = middlewares;
 
   const use: Pipe<T>["use"] = (...middlewares) => {

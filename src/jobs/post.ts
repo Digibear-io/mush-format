@@ -14,20 +14,21 @@ export default (ctx: Context, next: Next) => {
   });
 
   // look for object &attribute entries. If installer is true, add a test.
-  ctx.output = ctx.output.replace(
-    /&(.*)\s+?(.*)\s?=\s?(.*)/gi,
-    (...args: string[]) => {
-      if (ctx.installer) {
-        return (
-          `${args[0]}\n` +
-          `think %ch%cyformat >>%cn Created Attribute '%ch${args[1]
-            .trim()
-            .toUpperCase()}%cn' on '%ch${args[2].trim()}%cn' [if(hasattr(${args[2].trim()}, ${args[1].trim()}),%ch%cG PASS %cn,%ch%cR FAIL %cn)]`
-        );
+  ctx.output = ctx.output.replace(/&(.*)\s+?(.*)/gi, (...args: string[]) => {
+    if (ctx.installer) {
+      if (/.*:.*/.test(args[1])) {
+        const [dbref, action] = args[1].split(":");
       }
-      return args[0];
+
+      return (
+        `${args[0]}\n` +
+        `think %ch%cyformat >>%cn Created command '%ch${args[1]
+          .trim()
+          .toUpperCase()}%cn' on '%ch${args[2].trim()}%cn' [if(hasattr(${args[2].trim()}, ${args[1].trim()}),%ch%cG PASS %cn,%ch%cR FAIL %cn)]`
+      );
     }
-  );
+    return args[0];
+  });
 
   // look for room @dig entries. If installer is true, add a test.
   ctx.output = ctx.output.replace(/@dig\s+(.*)/gi, (...args: string[]) => {
