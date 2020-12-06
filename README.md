@@ -32,14 +32,14 @@ yarn add @digibear/mush-format
 ## Usage
 
 ```JavaScript
-import format from "@digibear/mush-format";
+import { formatter } from "@digibear/mush-format";
 
 const code = `
 // This line won't render
 &command.cmd #123=$things:
   @pemit %#=And Stuff. // this line will be added to the first.`;
 
-format(code)
+formatter(code)
   .then(console.log)
   .catch(console.error);
 
