@@ -3,3 +3,5 @@ dist
 .vscode
 yarn.lock
 yarn-error.log
+src/test.ts
+package-lock.json

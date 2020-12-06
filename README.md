@@ -4,7 +4,7 @@
 
 > This repo is still very much under development. While the API is pretty stable now, minor things are likely to change before the API hits stable `1.0.0`.
 
-a Typescript library designed to take mushcode from something readable to something you can quote directly into your game.
+a Typescript library designed to take mushcode from something readable to something you can quote directly into your game. See the [Demo](format.ursamu.io)!
 
 **Table Of Contents**<br />
 [Installation](#install) <br/>
@@ -32,7 +32,7 @@ yarn add @digibear/mush-format
 ## Usage
 
 ```JavaScript
-import { format } from "@digibear/mush-format";
+import format from "@digibear/mush-format";
 
 const code = `
 // This line won't render
@@ -48,7 +48,7 @@ format(code)
 
 ## CLI
 
-Coming soon
+`npm i -g @digibear/mush-format` then `mform --help`
 
 ## Plugins
 
@@ -89,7 +89,7 @@ next();
 **`index.js`**
 
 ```JS
-import format from '@digibear/mush-format';
+import { formatter } from '@digibear/mush-format';
 import startLog from "../plugins/plugin"
 
 // Install any middleware.
@@ -169,7 +169,7 @@ It's a multi-line file.
 
 ### `@debug`
 
-The @debug directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
+The `@debug` directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
 
 ```
 @debug
@@ -184,13 +184,26 @@ think %chThis will be included in the processed code!%cn
   // a new line!
 ```
 
+### `@installer`
+
+The `@installer` directive creates an installer script that includes verification for objects, attributes, tags, flags, and totems. Instead of that random 'Huh?' message, the install script offers a useful error.
+
+```
+@installer
+
+/ ...
+
+@create Test Object <TO>;
+
+// -> @create Test Object <TO>;
+// -> think %ch%cyMush-Format >> %cnCreated Object: %chFoobar [if(match(lastcreate(me, t), Foobar),%ch%cG PASS %cn,%ch%cR FAIL %cn)]
+
+```
+
 ### Todo
 
-- [x] Ability to load plugins before running the formatter.
-- [x] Clean up Middleware System.
-- [x] Add #include tag for github repos.
 - [ ] Add #include for local repos.
-- [x] Add the ability to read from Github Repos
+- [ ] Generated help files.
 
 ## License
 

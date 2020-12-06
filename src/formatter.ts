@@ -1,6 +1,7 @@
 import open from "./jobs/open";
 import render from "./jobs/render";
 import compress from "./jobs/compress";
+import post from "./jobs/post";
 import pipeline, { Middleware, Next, Pipe } from "./middleware";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
@@ -19,6 +20,7 @@ export interface Context {
   input: string;
   scratch: { [k: string]: any };
   debug?: boolean;
+  installer?: boolean;
   headers: Header[];
   footers: Header[];
   output: string;
@@ -43,6 +45,7 @@ export class Formatter {
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(render);
     this.stack.get("compress")?.use(compress);
+    this.stack.get("post")?.use(post);
   }
 
   /**
@@ -63,27 +66,17 @@ export class Formatter {
 
     // Okay, passing data around here and mutating it.  I'm sure
     // there's a more elegant way, but this'll work for now!
-    await this.stack.get("pre")?.execute(ctx);
-    await this.stack.get("open")?.execute(ctx);
-    await this.stack.get("render")?.execute(ctx);
-    await this.stack.get("compress")?.execute(ctx);
-    await this.stack.get("post")?.execute(ctx);
+    try {
+      await this.stack.get("pre")?.execute(ctx);
+      await this.stack.get("open")?.execute(ctx);
+      await this.stack.get("render")?.execute(ctx);
+      await this.stack.get("compress")?.execute(ctx);
+      await this.stack.get("post")?.execute(ctx);
+    } catch {
+      console.log("Error: Unable to process requested file.");
+    }
 
-    ctx.output =
-      ctx.headers
-        .map((header) => `@@ ${header.name}: ${header.value}`)
-        .join("\n") +
-      "\n" +
-      ctx.output;
-
-    ctx.output =
-      ctx.output +
-      "\n\n" +
-      ctx.footers
-        .map((footer) => `@@ ${footer.name}: ${footer.value}`)
-        .join("\n");
-
-    return ctx.output;
+    return ctx.output.trim();
   }
 
   use(step: Step, ...plugins: Middleware<Context>[]) {
@@ -92,6 +85,6 @@ export class Formatter {
   }
 }
 
-export default new Formatter();
+export const formatter = new Formatter();
 
 export { Next };

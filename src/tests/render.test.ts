@@ -1,7 +1,5 @@
 /// <reference types="jest" />
-import Formatter from "../formatter";
-
-const formatter = new Formatter();
+import formatter from "../formatter";
 
 const str = "\n@debug\n\n#debug {\nThis is a test\n}\n";
 

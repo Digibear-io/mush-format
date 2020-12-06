@@ -1,7 +1,5 @@
 /// <reference types="jest" />
-import Formatter from "../formatter";
-
-const formatter = new Formatter();
+import formatter from "../formatter";
 
 test("Compression honors trailing spaces.", async () => {
   const results = await formatter.format(

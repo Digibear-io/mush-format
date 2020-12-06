@@ -7,7 +7,7 @@ export default (ctx: Context, next: Next) => {
     .split("\n")
     .filter(Boolean)
     .reduce((acc: string, curr: string) => {
-      curr.match(/^\s+/) // Does line start with a space?
+      curr.match(/^[ \t]+/) // Does line start with a space?
         ? (acc += curr.trimLeft())
         : (acc += "\n" + curr);
       return acc;

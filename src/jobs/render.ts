@@ -20,8 +20,14 @@ export default (ctx: Context, next: Next) => {
   );
 
   // Look for the @debug directive.
-  ctx.scratch.current = ctx.scratch.current.replace(/@debug/g, () => {
+  ctx.scratch.current = ctx.scratch.current.replace(/@debug/gi, () => {
     ctx.debug = true;
+    return "";
+  });
+
+  // Look for the @installer directive.
+  ctx.scratch.current = ctx.scratch.current.replace(/@installer/gi, () => {
+    ctx.installer = true;
     return "";
   });
 
