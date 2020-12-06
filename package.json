@@ -10,7 +10,7 @@
     "preprocessor"
   ],
   "files": [
-    "dist/**/*.js",
+    "dist/**/*.js ",
     "dist/**/*.ts",
     "mushformatter.jpg"
   ],
