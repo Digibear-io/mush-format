@@ -29,7 +29,7 @@
   "scripts": {
     "build": "rm -rf ./dist && npx tsc -p ./tsconfig.json",
     "test": "jest",
-    "prepublish": "yarn run build"
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "commander": "^6.2.0",
