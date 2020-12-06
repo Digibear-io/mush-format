@@ -1,10 +1,5 @@
 /// <reference types="jest" />
-import Formatter from "../formatter";
-
-const formatter = new Formatter();
-
-test("Create a new formatter Object.", () =>
-  expect(new Formatter()).toBeInstanceOf(Formatter));
+import formatter from "../formatter";
 
 test("Return a string.", async () => {
   expect(await formatter.format("This is a test")).toMatch("This is a test");

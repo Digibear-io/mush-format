@@ -4,7 +4,7 @@
 
 > This repo is still very much under development. While the API is pretty stable now, minor things are likely to change before the API hits stable `1.0.0`.
 
-a Typescript library designed to take mushcode from something readable to something you can quote directly into your game.
+a Typescript library designed to take mushcode from something readable to something you can quote directly into your game. See the [Demo](format.ursamu.io)!
 
 **Table Of Contents**<br />
 [Installation](#install) <br/>
@@ -48,7 +48,7 @@ format(code)
 
 ## CLI
 
-Coming soon
+`npm i -g @digibear/mush-format` then `mform --help`
 
 ## Plugins
 
@@ -89,7 +89,7 @@ next();
 **`index.js`**
 
 ```JS
-import format from '@digibear/mush-format';
+import { formatter } from '@digibear/mush-format';
 import startLog from "../plugins/plugin"
 
 // Install any middleware.

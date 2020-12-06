@@ -14,6 +14,9 @@
     "dist/**/*.ts",
     "mushformatter.jpg"
   ],
+  "bin": {
+    "mform": "./bin/mform.js"
+  },
   "author": "Lemuel L. Canady, Jr",
   "license": "MIT",
   "repository": {
@@ -29,11 +32,13 @@
     "prepublish": "yarn run build"
   },
   "dependencies": {
+    "commander": "^6.2.0",
     "isomorphic-fetch": "^3.0.0",
     "string-replace-async": "^2.0.0"
   },
   "devDependencies": {
-    "@types/isomorphicS-fetch": "^0.0.35",
+    "@types/commander": "^2.12.2",
+    "@types/isomorphic-fetch": "^0.0.35",
     "@types/jest": "^26.0.14",
     "babel-jest": "^26.5.2",
     "jest": "^26.5.3",

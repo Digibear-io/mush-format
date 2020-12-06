@@ -66,11 +66,15 @@ export class Formatter {
 
     // Okay, passing data around here and mutating it.  I'm sure
     // there's a more elegant way, but this'll work for now!
-    await this.stack.get("pre")?.execute(ctx);
-    await this.stack.get("open")?.execute(ctx);
-    await this.stack.get("render")?.execute(ctx);
-    await this.stack.get("compress")?.execute(ctx);
-    await this.stack.get("post")?.execute(ctx);
+    try {
+      await this.stack.get("pre")?.execute(ctx);
+      await this.stack.get("open")?.execute(ctx);
+      await this.stack.get("render")?.execute(ctx);
+      await this.stack.get("compress")?.execute(ctx);
+      await this.stack.get("post")?.execute(ctx);
+    } catch {
+      console.log("Error: Unable to process requested file.");
+    }
 
     return ctx.output.trim();
   }
@@ -81,6 +85,6 @@ export class Formatter {
   }
 }
 
-export default new Formatter();
+export const formatter = new Formatter();
 
 export { Next };
