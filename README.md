@@ -202,8 +202,8 @@ The `@installer` directive creates an installer script that includes verificatio
 
 ### Todo
 
-- [] Add #include for local repos.
-- [] Generated help files.
+- [ ] Add #include for local repos.
+- [ ] Generated help files.
 
 ## License
 
