@@ -48,7 +48,36 @@ formatter(code)
 
 ## CLI
 
+Mush-format has a global command avaliable, `mform`. It's able to format a file from the command line.
+
+### Basic Usage
+
 `npm i -g @digibear/mush-format` then `mform --help`
+
+### Diffing
+
+`mform` has the ability to just print the differences between two runs of a file. A great tool if you're planning on adding formatting to your development toolchain.
+
+```
+mform -di input.mush
+
+or
+
+mform --diff -i input.mush
+```
+
+When you run mform it automatically caches your resulting archive for potential comparrison later. To purge a file related to your mushcode archive:
+
+```
+mform --purge -i input.mush
+mform -pi input.mush
+```
+
+or with diffing:
+
+```
+mform -pdi input.mush
+```
 
 ## Plugins
 
@@ -71,7 +100,6 @@ The behavior of the formatter is configurable through the use of plugins.
     - `footers?: Map<string, any>` Footers to include
     - `output?: string;` The current state of the formatted text
     - `cache: Map<string, string>`
-    - `next()` Force the program to move onto the next piece of middleware within the middleware pipeline.
 
 **`plugin.js`**
 
@@ -191,7 +219,7 @@ The `@installer` directive creates an installer script that includes verificatio
 ```
 @installer
 
-/ ...
+// ...
 
 @create Test Object <TO>;
 
@@ -200,10 +228,24 @@ The `@installer` directive creates an installer script that includes verificatio
 
 ```
 
+## Development
+
+To setup `mush-format` in your own development enviornment, there are a few easy steps!
+
+```
+git clone https://github.com/digibear-io/mush-format.git
+cd mush-format
+npm install
+npm run build
+```
+
+And you're ready to start coding!
+
 ### Todo
 
 - [ ] Add #include for local repos.
 - [ ] Generated help files.
+- [ ] Mushcode Archive initializer.
 
 ## License
 
