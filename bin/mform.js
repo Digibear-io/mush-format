@@ -1,24 +1,56 @@
 #!/usr/bin/env node
 
 const { program } = require("commander");
-const { readFileSync, writeFileSync } = require("fs");
+const { readFileSync, writeFileSync, existsSync, unlinkSync } = require("fs");
+const { join } = require("path");
 const { formatter } = require("../dist/formatter");
+const lineDiff = require("line-diff");
 
 program
-  .version("1.0.0")
+  .version("1.1.0")
   .option("-i --input <file>", "The input file to format.")
-  .option("-o --output <file>", "The file to save the output too.");
+  .option("-o --output <file>", "The file to save the output too.")
+  .option(
+    "-d --diff",
+    "Only print the differences from the previous output file."
+  )
+  .option("-p --purge", "Purge any temp diff files.");
 
 program.parse(process.argv);
 
+// Get any diff file if it exists.
+const DIFF_PATH = join(__dirname, `./tmp/${program.input}`);
+const exists = existsSync(DIFF_PATH);
+const diffIn = exists ? readFileSync(DIFF_PATH, { encoding: "utf-8" }) : "";
+
 try {
   const file = readFileSync(program.input, { encoding: "utf-8" });
+
   formatter.format(file).then((data) => {
+    let output = [];
+    if (program.diff) {
+      const diff = new lineDiff(diffIn, data);
+      const tempOutput = data.split("\n");
+      writeFileSync(DIFF_PATH, data);
+      diff.changes.forEach((change) => {
+        if (change.changes) {
+          output.push(tempOutput[change.lineno - 1]);
+        }
+      });
+    }
+
     if (program.output) {
-      writeFileSync(program.output, data);
+      writeFileSync(program.output, program.diff ? output : data);
       console.log(`[MFORM]: Formatted: ${program.input} >> ${program.output}`);
     } else {
-      console.log(data);
+      console.log(program.diff ? output.join("\n") : data);
+    }
+
+    // Purge the diff file.
+    if (program.purge) {
+      try {
+        unlinkSync(DIFF_PATH);
+      } catch {}
     }
   });
 } catch (error) {

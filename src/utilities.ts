@@ -1,3 +1,5 @@
+import { open, readFile, writeFile } from "fs";
+
 export function validURL(str: string) {
   var pattern = new RegExp(
     "^(https?:\\/\\/)?" + // protocol
