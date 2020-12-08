@@ -1,4 +1,6 @@
+import { existsSync, readFileSync } from "fs";
 import _fetch from "isomorphic-fetch";
+import { dirname, resolve } from "path";
 import replace from "string-replace-async";
 
 import { Context, Next } from "../formatter";
@@ -51,7 +53,22 @@ export default async (ctx: Context, next: Next) => {
           }
         }
       }
-    } catch {}
+    } catch {
+      // If it's not a valid github url, then try using fs.
+      try {
+        // If the path is actually a file...
+        if (existsSync(resolve(path))) {
+          if (!ctx.cache.has(path)) {
+            // Save the file to the cache.
+            const text = readFileSync(resolve(path), { encoding: "utf-8" });
+            ctx.cache.set(`${ctx.scratch.base}/index.mush`, text);
+
+            // scan the file for more includes.
+            return scan(text);
+          }
+        }
+      } catch {}
+    }
   };
 
   // Scan for includes and open the the file.
