@@ -8,7 +8,7 @@ const {
   unlinkSync,
   mkdirSync,
 } = require("fs");
-const { join } = require("path");
+const { join, resolve, dirname } = require("path");
 const { formatter } = require("../dist/formatter");
 const lineDiff = require("line-diff");
 
@@ -25,14 +25,16 @@ program
 program.parse(process.argv);
 
 // Get any diff file if it exists.
-const DIFF_PATH = join(process.cwd(), `.tmp/${program.input}`);
+const DIFF_PATH = resolve(
+  `${dirname(program.input)}/.tmp/${program.input.split("/").pop()}`
+);
 const exists = existsSync(DIFF_PATH);
-console.log(DIFF_PATH);
+
 // if the program is diffing, check for a temp file in the cwd.
 if (program.diff) {
   try {
-    if (!existsSync(join(process.cwd(), ".tmp/")))
-      mkdirSync(join(process.cwd(), ".tmp/"));
+    if (!existsSync(resolve(`${dirname(program.input)}/.tmp`)))
+      mkdirSync(resolve(`${dirname(program.input)}/.tmp`));
   } catch {
     console.log("Unable to create .tmp file in current directory.");
   }
