@@ -12,7 +12,6 @@
   "files": [
     "dist/**/*.js ",
     "dist/**/*.ts",
-    "bin/tmp",
     "mushformatter.jpg"
   ],
   "bin": {

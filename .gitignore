@@ -5,7 +5,4 @@ yarn.lock
 yarn-error.log
 src/test.ts
 package-lock.json
-bin/tmp/*.txt
-bin/tmp/*.mux
-bin/tmp/*.mush
-bin/tmp/*.mu
+.tmp

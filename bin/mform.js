@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 const { program } = require("commander");
-const { readFileSync, writeFileSync, existsSync, unlinkSync } = require("fs");
+const {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  unlinkSync,
+  mkdirSync,
+} = require("fs");
 const { join } = require("path");
 const { formatter } = require("../dist/formatter");
 const lineDiff = require("line-diff");
@@ -19,8 +25,19 @@ program
 program.parse(process.argv);
 
 // Get any diff file if it exists.
-const DIFF_PATH = join(__dirname, `./tmp/${program.input}`);
+const DIFF_PATH = join(process.cwd(), `.tmp/${program.input}`);
 const exists = existsSync(DIFF_PATH);
+console.log(DIFF_PATH);
+// if the program is diffing, check for a temp file in the cwd.
+if (program.diff) {
+  try {
+    if (!existsSync(join(process.cwd(), ".tmp/")))
+      mkdirSync(join(process.cwd(), ".tmp/"));
+  } catch {
+    console.log("Unable to create .tmp file in current directory.");
+  }
+}
+
 const diffIn = exists ? readFileSync(DIFF_PATH, { encoding: "utf-8" }) : "";
 
 try {
