@@ -18,6 +18,7 @@ export interface Header {
 
 export interface Context {
   input: string;
+  path: string;
   scratch: { [k: string]: any };
   debug?: boolean;
   installer?: boolean;
@@ -54,10 +55,11 @@ export class Formatter {
    * @param layer The job to be added
    */
 
-  async format(text: string) {
+  async format(text: string, path = "") {
     const ctx: Context = {
       cache: new Map(),
       input: text,
+      path,
       output: "",
       scratch: {},
       headers: [],

@@ -29,7 +29,7 @@ const DIFF_PATH = resolve(
   `${dirname(program.input)}/.tmp/${program.input.split("/").pop()}`
 );
 const exists = existsSync(DIFF_PATH);
-
+let diffIn = "";
 // if the program is diffing, check for a temp file in the cwd.
 if (program.diff) {
   try {
@@ -40,12 +40,11 @@ if (program.diff) {
   }
 }
 
-const diffIn = exists ? readFileSync(DIFF_PATH, { encoding: "utf-8" }) : "";
-
 try {
+  diffIn = exists && readFileSync(DIFF_PATH, { encoding: "utf-8" });
   const file = readFileSync(program.input, { encoding: "utf-8" });
 
-  formatter.format(file).then((data) => {
+  formatter.format(file, dirname(program.input)).then((data) => {
     let output = [];
     if (program.diff) {
       const diff = new lineDiff(diffIn, data);
