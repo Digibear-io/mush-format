@@ -195,6 +195,28 @@ It's a multi-line file.
 @@ It's a multi-line file.
 ```
 
+### `#define <test> {<replacement>}`
+
+`#define` allows you to save a few keystrokes, and define your own directives Defines, when used later, will be replaced with whatever code you give them. Just remember! Defines follow the same basic formatting rules. Any time line starts with anything other than a space - it counts as a new command.
+
+`Tests` are regular expressions as strings. This means that spaces should be entered as a space " ".
+
+```
+#define @te[st]+ (.*) {
+think This is a
+  test:
+  $1
+}
+
+@test Foo
+```
+
+Then later, when the formatter is run, the above example becomes:
+
+```
+think This is a test: Foo
+```
+
 ### `@debug`
 
 The `@debug` directive tells the preprocessor that you would like to include any `#debug {}` meta-tags. The closing curly-brace `}` of the `#debug` block must be on it's own line, as the first character or else it won't be recognized.
@@ -243,7 +265,8 @@ And you're ready to start coding!
 
 ### Todo
 
-- [ ] Add #include for local repos.
+- [x] Add #include for local repos.
+- [x] Add #define support.
 - [ ] Generated help files.
 - [ ] Mushcode Archive initializer.
 

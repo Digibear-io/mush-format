@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import formatter from "../formatter";
+import { formatter } from "../formatter";
 
 const str = "\n@debug\n\n#debug {\nThis is a test\n}\n";
 
@@ -25,4 +25,16 @@ test("#include pulls in a github archive", async () => {
   expect(
     await formatter.format("#include git: lcanady/archive-test")
   ).toContain("file 4!");
+});
+
+test("#defines are replaced", async () => {
+  expect(
+    await formatter.format(`
+#define @test (.*) {
+  This is a $1 
+}
+
+@test Foobar
+    `)
+  ).toEqual("This is a Foobar");
 });

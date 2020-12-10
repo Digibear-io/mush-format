@@ -31,6 +31,15 @@ export default (ctx: Context, next: Next) => {
     return "";
   });
 
+  // Check for #define definitions
+  ctx.scratch.current = ctx.scratch.current.replace(
+    /#define\s+?(.*)\s+?{([\S\s]+)\n}\s*?/gi,
+    (...args: string[]) => {
+      ctx.defines?.set(new RegExp(args[1], "gi"), args[2]);
+      return "";
+    }
+  );
+
   // Expose any debug statements, if debugging is true.
   ctx.scratch.current = ctx.scratch.current.replace(
     /#debug\s*?{([\s\S]+)\n}\s*?/gi,
@@ -39,6 +48,20 @@ export default (ctx: Context, next: Next) => {
       return "";
     }
   );
+
+  // Replace defines.
+  ctx.defines?.forEach((v, k) => {
+    ctx.scratch.current = ctx.scratch.current.replace(
+      k,
+      (...args: string[]) => {
+        let registers = args;
+        // Search through the value string for registers and replace.
+        return v.replace(/\$([0-9])/g, (...args) => {
+          return registers[parseInt(args[1])].trim();
+        });
+      }
+    );
+  });
 
   next();
 };

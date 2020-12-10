@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import formatter from "../formatter";
+import { formatter } from "../formatter";
 
 test("Return a string.", async () => {
   expect(await formatter.format("This is a test")).toMatch("This is a test");

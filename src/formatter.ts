@@ -22,6 +22,7 @@ export interface Context {
   scratch: { [k: string]: any };
   debug?: boolean;
   installer?: boolean;
+  defines?: Map<RegExp, string>;
   headers: Header[];
   footers: Header[];
   output: string;
@@ -61,6 +62,7 @@ export class Formatter {
       input: text,
       path,
       output: "",
+      defines: new Map(),
       scratch: {},
       headers: [],
       footers: [],
