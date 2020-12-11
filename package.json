@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "commander": "^6.2.0",
+    "inquirer": "^7.3.3",
     "isomorphic-fetch": "^3.0.0",
     "line-diff": "^2.1.1",
     "string-replace-async": "^2.0.0",

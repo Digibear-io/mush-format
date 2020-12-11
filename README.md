@@ -54,6 +54,23 @@ Mush-format has a global command avaliable, `mform`. It's able to format a file 
 
 `npm i -g @digibear/mush-format` then `mform --help`
 
+```
+Usage: mform [options] [command]
+
+A MUSHcode pre-processor.
+
+Options:
+  -V, --version             output the version number
+  -h, --help                display help for command
+
+Commands:
+  run|r <path>||<project>   run a Project or file.
+  github|git <user>/<repo>  Run a github repo.
+  init|i <project>          Initialize a new MUSHCode project.
+  purge|p <file>            Purge your system of code deltas from diff files.
+  help [command]            display help for command
+```
+
 ### Diffing
 
 `mform` has the ability to just print the differences between two runs of a file. A great tool if you're planning on adding formatting to your development toolchain.
@@ -267,8 +284,9 @@ And you're ready to start coding!
 
 - [x] Add #include for local repos.
 - [x] Add #define support.
-- [ ] Generated help files.
-- [ ] Mushcode Archive initializer.
+- [x] Mushcode Archive initializer.
+- [ ] Complete purge sub-command.
+- [ ] Complete GitHub sub-command.
 
 ## License
 
