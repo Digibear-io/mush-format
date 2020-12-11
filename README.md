@@ -73,28 +73,17 @@ Commands:
 
 ### Diffing
 
-`mform` has the ability to just print the differences between two runs of a file. A great tool if you're planning on adding formatting to your development toolchain.
+`mform` has the ability to just print the differences between two runs of a file. A great tool if you're planning on adding formatting to your development toolchain. You can feed the run command a specific file, or an entire project.
 
 ```
-mform -di input.mush
+mform r -d input.mush
 
 or
 
-mform --diff -i input.mush
+mform run --diff  ./project
 ```
 
 When you run mform it automatically caches your resulting archive for potential comparrison later. To purge a file related to your mushcode archive:
-
-```
-mform --purge -i input.mush
-mform -pi input.mush
-```
-
-or with diffing:
-
-```
-mform -pdi input.mush
-```
 
 ## Plugins
 
