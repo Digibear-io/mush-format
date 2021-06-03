@@ -1,6 +1,6 @@
 {
   "name": "@digibear/mush-format",
-  "version": "0.14.2",
+  "version": "0.14.4",
   "description": "A mush code pre-processor written in TypeScript",
   "main": "dist/formatter.js",
   "keywords": [
@@ -33,6 +33,7 @@
     "prepublish": "npm run build"
   },
   "dependencies": {
+    "@ursamu/parser": "^1.2.1",
     "commander": "^6.2.0",
     "inquirer": "^7.3.3",
     "isomorphic-fetch": "^3.0.0",
