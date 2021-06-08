@@ -57,7 +57,11 @@ export default (ctx: Context, next: Next) => {
         let registers = args;
         // Search through the value string for registers and replace.
         return v.replace(/\$([0-9])/g, (...args) => {
-          return registers[parseInt(args[1])].trim();
+          if (registers[parseInt(args[1])]) {
+            return registers[parseInt(args[1])].trim();
+          } else {
+            return "";
+          }
         });
       }
     );

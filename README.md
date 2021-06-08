@@ -240,7 +240,7 @@ think %chThis will be included in the processed code!%cn
   // a new line!
 ```
 
-### `@installer`
+### `@installer`(Coming Soon)
 
 The `@installer` directive creates an installer script that includes verification for objects, attributes, tags, flags, and totems. Instead of that random 'Huh?' message, the install script offers a useful error.
 
