@@ -2,15 +2,17 @@ import { existsSync, readFileSync } from "fs";
 import _fetch from "isomorphic-fetch";
 import { dirname, join, resolve } from "path";
 import replace from "string-replace-async";
+import validURL from "valid-url";
 
 import { Context, Next } from "../formatter";
-import { validURL } from "../utilities";
 
 export default async (ctx: Context, next: Next) => {
   // Replace all references of #insert with compiled files recursively.
 
   const read = async (path: string): Promise<string | undefined> => {
-    const match = path.match(/gi[thub]+:\s+?(.*)\/(.*)$/i);
+    const match = path.match(
+      /git[hub]*?\s*?:(\w+)\/([^#\/]+)(?:#([^\/]+))?(?:\/(.*))/i
+    );
 
     try {
       // Check to see if it's a github link
@@ -18,11 +20,23 @@ export default async (ctx: Context, next: Next) => {
         // If yes, set the base directory, and pull the first file from
         // the github repo. Cache the results.
 
-        ctx.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${match[2]}/main/`;
-        if (validURL(`${ctx.scratch.base}/index.mush`)) {
-          const results = await _fetch(
-            `${ctx.scratch.base}/index.mush`
-          ).catch();
+        ctx.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${
+          match[2]
+        }/${match[3] || "main"}/${match[4]}`;
+        let last = ctx.scratch.base.split("/");
+        last = last.pop();
+        if (validURL.isWebUri(`${ctx.scratch.base}`) && /\..+$/.test(last)) {
+          const results = await _fetch(ctx.scratch.base);
+          if (!ctx.cache.has(ctx.scratch.base)) {
+            // Save the file to the cache.
+            const text = await results.text();
+            ctx.cache.set(`${ctx.scratch.base}`, text);
+
+            // scan the file for more includes.
+            return scan(text);
+          }
+        } else {
+          const results = await _fetch(`${ctx.scratch.base}/index.mush`);
           if (!ctx.cache.has(`${ctx.scratch.base}/index.mush`)) {
             // Save the file to the cache.
             const text = await results.text();
@@ -37,7 +51,7 @@ export default async (ctx: Context, next: Next) => {
         // directory works.
 
         const url = new URL(path, ctx.scratch.base).toString();
-        if (validURL(url)) {
+        if (validURL.isWebUri(url)) {
           if (!ctx.cache.has(url)) {
             const results = await _fetch(url);
             const text = await results.text();
@@ -53,7 +67,7 @@ export default async (ctx: Context, next: Next) => {
           }
         }
       }
-    } catch {
+    } catch (error) {
       // If it's not a valid github url, then try using fs.
       try {
         // If the path is actually a file...

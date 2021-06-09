@@ -167,12 +167,13 @@ Translates to:
 
 Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
 
-### `#include git[hub]: <user>/<repo>`
+### `#include git[hub]: <user>/<repo>[#branch][/<path>]`
 
-`#include` allows you to add mushcode contained in a github repo into your code before processing. The repo must have a `main` branch with a file named `index.mush` - which will serve as the main entry point for your build. Within the repo you can use relative paths (to remain compatible with building locally). Take a look at my [Example Repo](https://github.com/lcanady/archive-test.git) for a dummy implementation.
+`#include` allows you to add mushcode contained in a github repo into your code before processing. If path is given with a file name, it will open that file, else it will look for a file called `index.mush` to use as it's starting point from the last given directory, or the base of the project. [Example Repo](https://github.com/lcanady/archive-test.git) for a dummy implementation.
 
 ```
-#include git: lcanady/archive-test
+#include git:lcanady/archive-test
+#include git:lcanady/archive-test#main/code/file1.mush
 
 // ... More code ...
 ```
