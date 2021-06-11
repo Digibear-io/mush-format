@@ -11,7 +11,7 @@ export default async (ctx: Context, next: Next) => {
 
   const read = async (path: string): Promise<string | undefined> => {
     const match = path.match(
-      /git[hub]*?\s*?:(\w+)\/([^@\/]+)(?:@([^\/]+))?(?:\/(.*))/i
+      /git[hub]*:\s*(\w+)\/([^@\/]+)(?:@([^\/]+))?(?:\/(.*))?/i
     );
 
     try {
@@ -23,7 +23,7 @@ export default async (ctx: Context, next: Next) => {
         ctx.scratch.base = encodeURI(
           `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${
             match[3] || "main"
-          }/${match[4]}`
+          }/${match[4] || ""}`
         );
         let last = ctx.scratch.base.split("/");
         last = last.pop();
@@ -134,6 +134,8 @@ export default async (ctx: Context, next: Next) => {
   }
 
   // Kick off the recursive loop.
+  if (/^http|https/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
+  if (/^gi[thub]+.*/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   ctx.scratch.current = await scan(ctx.input);
 
   next();

@@ -7,7 +7,10 @@ program
   .description("A MUSHcode pre-processor.")
   .command("run <path>||<project>", "run a Project or file.")
   .alias("r")
-  .command("github <user>/<repo>", "Run a github repo.")
+  .command(
+    "github <user>/<repo>[@branch][/<file or folder>/]",
+    "Run a github repo."
+  )
   .alias("git")
   .command("init <project>", "Initialize a new MUSHCode project.")
   .alias("i")

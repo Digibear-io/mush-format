@@ -3,6 +3,7 @@
 const { program } = require("commander");
 const { mkdirSync, existsSync, writeFileSync } = require("fs");
 const inquirer = require("inquirer");
+const { resolve, join } = require("path");
 
 program.option("-y --yes", "Quick install with base settings.");
 
@@ -15,19 +16,23 @@ author: ${options.author || '" "'}
 main: ${options.main || "index.mush"}
 repo: ${options.repo ? options.repo : '" "'}
 Description: ${options.desc ? options.desc : '" "'}
+include: 
+  - /src/**/*
 `.trim();
 
 const header =
   "@@ To format this project, visit:  https://github.com/digibear-io/mush-format\n\n".trim();
 
 if (program.yes) {
+  const path = resolve(program.args[0]).toLowerCase();
   // Create the project folder if it doesn't exist.
-  if (!existsSync(program.args[0]))
+  if (!existsSync(path))
     try {
-      mkdirSync(program.args[0], { recursive: true });
-      mkdirSync(program.args[0] + "/src/", { recursive: true });
-      writeFileSync(program.args[0] + "/formatter.yml", yaml());
-      writeFileSync(program.args[0] + "/index.mush", header);
+      mkdirSync(path, { recursive: true });
+      mkdirSync(path, { recursive: true });
+      writeFileSync(path + "/formatter.yml", yaml());
+      writeFileSync(path + "/.gitignore", ".tmp");
+      writeFileSync(path + "/index.mush", header);
       console.log("[MFORM] Project created with default values.");
     } catch (error) {
       console.log("[MFORM] Error Creating project: ", error.message);
@@ -75,9 +80,11 @@ if (program.yes) {
     ])
     .then((answers) => {
       try {
-        mkdirSync(answers.path, { recursive: true });
-        writeFileSync(answers.path + "/formatter.yml", yaml(answers));
-        writeFileSync(answers.path + "/index.mush", header);
+        const path = resolve(join(answers.path, answers.project)).toLowerCase();
+        mkdirSync(path, { recursive: true });
+        writeFileSync(path + "/formatter.yml", yaml(answers));
+        writeFileSync(path + "/index.mush", header);
+        writeFileSync(path + "/.gitignore", ".tmp");
         console.log("[MFORM] Project created.");
       } catch (error) {
         console.log("[MFORM] Error Creating project: ", error.message);

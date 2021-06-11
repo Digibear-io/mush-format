@@ -161,5 +161,5 @@ try {
   }
 } catch (error) {
   //console.log(`${program.diff ? "think " : ""}[MFORM] ERROR: ${error}`);
-  console.log(error);
+  formatter.format(args[0]).then((data) => console.log(data));
 }
