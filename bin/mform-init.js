@@ -14,15 +14,18 @@ Project: ${options.project.replace(/\s/g, "-") || "project"}
 author: ${options.author || '" "'}
 main: ${options.main || "index.mush"}
 repo: ${options.repo ? options.repo : '" "'}
+Description: ${options.desc ? options.desc : '" "'}
 `.trim();
 
-const header = "@@ To compile this project, visit:  https://github.com/digibear-io/mush-format\n\n".trim();
+const header =
+  "@@ To format this project, visit:  https://github.com/digibear-io/mush-format\n\n".trim();
 
 if (program.yes) {
   // Create the project folder if it doesn't exist.
   if (!existsSync(program.args[0]))
     try {
       mkdirSync(program.args[0], { recursive: true });
+      mkdirSync(program.args[0] + "/src/", { recursive: true });
       writeFileSync(program.args[0] + "/formatter.yml", yaml());
       writeFileSync(program.args[0] + "/index.mush", header);
       console.log("[MFORM] Project created with default values.");
@@ -43,6 +46,12 @@ if (program.yes) {
         type: "input",
         name: "author",
         message: "Author?",
+        default: "N/A",
+      },
+      {
+        type: "input",
+        name: "desc",
+        message: "Project Description?",
         default: "N/A",
       },
       {
@@ -69,7 +78,7 @@ if (program.yes) {
         mkdirSync(answers.path, { recursive: true });
         writeFileSync(answers.path + "/formatter.yml", yaml(answers));
         writeFileSync(answers.path + "/index.mush", header);
-        console.log("[MFORM] Project created with default values.");
+        console.log("[MFORM] Project created.");
       } catch (error) {
         console.log("[MFORM] Error Creating project: ", error.message);
       }

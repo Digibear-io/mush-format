@@ -11,7 +11,7 @@ export default async (ctx: Context, next: Next) => {
 
   const read = async (path: string): Promise<string | undefined> => {
     const match = path.match(
-      /git[hub]*?\s*?:(\w+)\/([^#\/]+)(?:#([^\/]+))?(?:\/(.*))/i
+      /git[hub]*?\s*?:(\w+)\/([^@\/]+)(?:@([^\/]+))?(?:\/(.*))/i
     );
 
     try {
@@ -20,9 +20,11 @@ export default async (ctx: Context, next: Next) => {
         // If yes, set the base directory, and pull the first file from
         // the github repo. Cache the results.
 
-        ctx.scratch.base = `https://raw.githubusercontent.com/${match[1]}/${
-          match[2]
-        }/${match[3] || "main"}/${match[4]}`;
+        ctx.scratch.base = encodeURI(
+          `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${
+            match[3] || "main"
+          }/${match[4]}`
+        );
         let last = ctx.scratch.base.split("/");
         last = last.pop();
         if (validURL.isWebUri(`${ctx.scratch.base}`) && /\..+$/.test(last)) {
