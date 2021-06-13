@@ -114,7 +114,7 @@ function parseDir() {
   ensureDirectoryExistence(DIFF_PATH);
   const diffIn = tmp(DIFF_PATH);
 
-  formatter.format(file, args[0]).then((data) => {
+  formatter.format(file, args[0]).then(({ data }) => {
     let output = [];
     // Update the diff file for the file just ran.
     writeFileSync(DIFF_PATH, data);
@@ -160,5 +160,5 @@ try {
       break;
   }
 } catch {
-  formatter.format(args[0]).then((data) => console.log(data));
+  formatter.format(args[0]).then(({ data }) => console.log(data));
 }
