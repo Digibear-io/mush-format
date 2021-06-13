@@ -38,11 +38,11 @@ export default async (ctx: Context, next: Next) => {
             return scan(text);
           }
         } else {
-          const results = await _fetch(`${ctx.scratch.base}/index.mush`);
+          const results = await _fetch(`${ctx.scratch.base}/index.mu`);
           if (!ctx.cache.has(`${ctx.scratch.base}/index.mush`)) {
             // Save the file to the cache.
             const text = await results.text();
-            ctx.cache.set(`${ctx.scratch.base}/index.mush`, text);
+            ctx.cache.set(`${ctx.scratch.base}/index.mu`, text);
 
             // scan the file for more includes.
             return scan(text);
@@ -137,6 +137,6 @@ export default async (ctx: Context, next: Next) => {
   if (/^http|https/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   if (/^gi[thub]+.*/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   ctx.scratch.current = await scan(ctx.input);
-
+  ctx.scratch.combined = ctx.scratch.current;
   next();
 };

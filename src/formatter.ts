@@ -80,7 +80,7 @@ export class Formatter {
       console.log("Error: Unable to process requested file.");
     }
 
-    return ctx.output.trim();
+    return { data: ctx.output.trim(), combined: ctx.scratch.combined };
   }
 
   use(step: Step, ...plugins: Middleware<Context>[]) {

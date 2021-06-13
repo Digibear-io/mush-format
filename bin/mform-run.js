@@ -159,7 +159,6 @@ try {
       parseDir();
       break;
   }
-} catch (error) {
-  //console.log(`${program.diff ? "think " : ""}[MFORM] ERROR: ${error}`);
+} catch {
   formatter.format(args[0]).then((data) => console.log(data));
 }

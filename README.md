@@ -40,7 +40,7 @@ const code = `
   @pemit %#=And Stuff. // this line will be added to the first.`;
 
 formatter(code)
-  .then(console.log)
+  .then(({data}) => console.log(data))
   .catch(console.error);
 
 // -> &command.cmd #123=$things:@pemit %# = And Stuff.
@@ -202,7 +202,7 @@ It's a multi-line file.
 @@ It's a multi-line file.
 ```
 
-### `#define <test> {<replacement>}`
+### `#define <test> {<replacement>}`(Coming Soon)
 
 `#define` allows you to save a few keystrokes, and define your own directives Defines, when used later, will be replaced with whatever code you give them. Just remember! Defines follow the same basic formatting rules. Any time line starts with anything other than a space - it counts as a new command.
 
@@ -273,7 +273,7 @@ And you're ready to start coding!
 ### Todo
 
 - [x] Add #include for local repos.
-- [x] Add #define support.
+- [ ] Add #define support.
 - [x] Mushcode Archive initializer.
 - [ ] Complete purge sub-command.
 - [ ] Complete GitHub sub-command.
