@@ -39,7 +39,7 @@ export default async (ctx: Context, next: Next) => {
           }
         } else {
           const results = await _fetch(`${ctx.scratch.base}/index.mu`);
-          if (!ctx.cache.has(`${ctx.scratch.base}/index.mush`)) {
+          if (!ctx.cache.has(`${ctx.scratch.base}/index.mu`)) {
             // Save the file to the cache.
             const text = await results.text();
             ctx.cache.set(`${ctx.scratch.base}/index.mu`, text);

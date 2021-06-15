@@ -62,7 +62,7 @@ function parseFile() {
   const file = readFileSync(resolve(args[0]), { encoding: "utf-8" });
 
   // Format the file fed to the CLI.
-  formatter.format(file, dirname(args[0])).then((data) => {
+  formatter.format(file, dirname(args[0])).then(({ data }) => {
     let output = [];
     // Update the diff file for the file just ran.
     writeFileSync(DIFF_PATH, data);
