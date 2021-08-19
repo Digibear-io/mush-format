@@ -40,7 +40,7 @@ const code = `
   @pemit %#=And Stuff. // this line will be added to the first.`;
 
 formatter(code)
-  .then(console.log)
+  .then(({data}) => console.log(data))
   .catch(console.error);
 
 // -> &command.cmd #123=$things:@pemit %# = And Stuff.
@@ -100,7 +100,7 @@ The behavior of the formatter is configurable through the use of plugins.
     - `debug?: Boolean` An indicator for `#debug` meta-tag evaluation.
     - `input: string` The original text
     - `scratch?:` Random formatter storage object
-      - `current: string` The current edit of the combined code.
+      - `current: string` The current edit of the data code.
       - `[k: string]: any`
     - `headers?: Map<string, any>` Headers to include
     - `footers?: Map<string, any>` Footers to include
@@ -132,7 +132,9 @@ formatter.use("pre", startLog);
 formatter.format(`
 // This is an example file!
 &cmd.awesome #134=
-  @pemit %#=This is example code!`);
+  @pemit %#=This is example code!`)
+  .then(({data}) => console.log(data))
+  .catch((err) => console.error(err));
 
 // -> Formatter started - Tue Oct 20 2020 12:52:23 ...
 // -> &cmd.awesome #134=@pemit %#=this is example code!
@@ -167,7 +169,9 @@ Translates to:
 
 Meta tags are a way to add extra functionality to your formatted mushcode scripts. They cover things like importing other files and mushc scripts, to controlling conditional formatting of compile-time commands.
 
-### `#include git[hub]: <user>/<repo>[#branch][/<path>]`
+### `#include git[hub]:<user>/<repo>[#branch][/<path>]`
+
+### `#include <URL or Path>`
 
 `#include` allows you to add mushcode contained in a github repo into your code before processing. If path is given with a file name, it will open that file, else it will look for a file called `index.mush` to use as it's starting point from the last given directory, or the base of the project. [Example Repo](https://github.com/lcanady/archive-test.git) for a dummy implementation.
 
@@ -202,14 +206,14 @@ It's a multi-line file.
 @@ It's a multi-line file.
 ```
 
-### `#define <test> {<replacement>}`
+### `@define`(Coming Soon)
 
-`#define` allows you to save a few keystrokes, and define your own directives Defines, when used later, will be replaced with whatever code you give them. Just remember! Defines follow the same basic formatting rules. Any time line starts with anything other than a space - it counts as a new command.
+`@define` allows you to save a few keystrokes, and `@define` your own directives Defines, when used later, will be replaced with whatever code you give them. Just remember! Defines follow the same basic formatting rules. Any time line starts with anything other than a space - it counts as a new command.
 
 `Tests` are regular expressions as strings. This means that spaces should be entered as a space " ".
 
 ```
-#define @te[st]+ (.*) {
+@define @te[st]+ (.*) {
 think This is a
   test:
   $1
@@ -276,7 +280,9 @@ And you're ready to start coding!
 - [x] Add #define support.
 - [x] Mushcode Archive initializer.
 - [ ] Complete purge sub-command.
-- [ ] Complete GitHub sub-command.
+- [x] Complete GitHub sub-command.
+- [ ] Add Installer mode.
+- [x] Add @debug functionality
 
 ## License
 
