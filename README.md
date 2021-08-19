@@ -100,7 +100,7 @@ The behavior of the formatter is configurable through the use of plugins.
     - `debug?: Boolean` An indicator for `#debug` meta-tag evaluation.
     - `input: string` The original text
     - `scratch?:` Random formatter storage object
-      - `current: string` The current edit of the combined code.
+      - `current: string` The current edit of the data code.
       - `[k: string]: any`
     - `headers?: Map<string, any>` Headers to include
     - `footers?: Map<string, any>` Footers to include
@@ -273,10 +273,12 @@ And you're ready to start coding!
 ### Todo
 
 - [x] Add #include for local repos.
-- [ ] Add #define support.
+- [x] Add #define support.
 - [x] Mushcode Archive initializer.
 - [ ] Complete purge sub-command.
-- [ ] Complete GitHub sub-command.
+- [x] Complete GitHub sub-command.
+- [ ] Add Installer mode.
+- [x] Add @debug functionality
 
 ## License
 

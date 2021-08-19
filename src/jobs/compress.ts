@@ -1,8 +1,8 @@
 import { Context, Next } from "../formatter";
 
 export default (ctx: Context, next: Next) => {
-  ctx.output = ctx.scratch.current
-    ?.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, " ") // remove comments
+  ctx.output = ctx.scratch
+    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, " ") // remove comments
     .replace(/^#.*/gim, "") // remove unevaluated tags.
     .replace(/\n+/g, "\n")
     .split("\n")

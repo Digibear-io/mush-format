@@ -3,6 +3,7 @@ import render from "./jobs/render";
 import compress from "./jobs/compress";
 import post from "./jobs/post";
 import pipeline, { Middleware, Next, Pipe } from "./middleware";
+import defines from "./jobs/@define";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -19,7 +20,7 @@ export interface Header {
 export interface Context {
   input: string;
   path: string;
-  scratch: { [k: string]: any };
+  scratch: { [k: string]: any; current?: string };
   debug?: boolean;
   installer?: boolean;
   defines?: Map<RegExp, string>;
@@ -45,7 +46,7 @@ export class Formatter {
 
     // install the middleware
     this.stack.get("open")?.use(open);
-    this.stack.get("render")?.use(render);
+    this.stack.get("render")?.use(defines, render);
     this.stack.get("compress")?.use(compress);
     this.stack.get("post")?.use(post);
   }
@@ -76,11 +77,13 @@ export class Formatter {
       await this.stack.get("render")?.execute(ctx);
       await this.stack.get("compress")?.execute(ctx);
       await this.stack.get("post")?.execute(ctx);
-    } catch {
-      console.log("Error: Unable to process requested file.");
+    } catch (error) {
+      console.log("Error: Unable to process requested file.\nErrpr: " + error);
     }
 
-    return { data: ctx.output.trim(), combined: ctx.scratch.combined };
+    return {
+      data: ctx.output.trim(),
+    };
   }
 
   use(step: Step, ...plugins: Middleware<Context>[]) {

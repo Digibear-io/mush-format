@@ -136,7 +136,8 @@ export default async (ctx: Context, next: Next) => {
   // Kick off the recursive loop.
   if (/^http|https/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   if (/^gi[thub]+.*/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
+  ctx.scratch.current = "";
   ctx.scratch.current = await scan(ctx.input);
-  ctx.scratch.combined = ctx.scratch.current;
+  ctx.scratch.data = ctx.scratch.current;
   next();
 };
