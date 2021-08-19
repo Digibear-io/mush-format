@@ -138,6 +138,7 @@ export default async (ctx: Context, next: Next) => {
   if (/^gi[thub]+.*/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   ctx.scratch.current = "";
   ctx.scratch.current = await scan(ctx.input);
+  ctx.combined = ctx.scratch.current;
   ctx.scratch.data = ctx.scratch.current;
   next();
 };

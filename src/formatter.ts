@@ -27,6 +27,7 @@ export interface Context {
   headers: Header[];
   footers: Header[];
   output: string;
+  combined: string;
   cache: Map<string, any>;
 }
 
@@ -63,6 +64,7 @@ export class Formatter {
       input: text,
       path,
       output: "",
+      combined: "",
       defines: new Map(),
       scratch: {},
       headers: [],
@@ -83,6 +85,7 @@ export class Formatter {
 
     return {
       data: ctx.output.trim(),
+      combined: ctx.combined.trim(),
     };
   }
 
