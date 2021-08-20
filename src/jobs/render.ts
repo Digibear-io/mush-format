@@ -34,15 +34,15 @@ export default (ctx: Context, next: Next) => {
 
   ctx.scratch.current?.split("\n").forEach((line) => {
     if (/^@debug/i.test(line)) {
-      ctx.scratch.debug.debug = true;
+      return (ctx.scratch.debug.debug = true);
     } else if (/^#debug\s*?\{/gi.test(line)) {
-      ctx.scratch.debug.start = true;
+      return (ctx.scratch.debug.start = true);
     } else if (ctx.scratch.debug.start && ctx.scratch.debug.debug) {
-      ctx.scratch.debug.edited += line + "\n";
+      return (ctx.scratch.debug.edited += line + "\n");
     } else if (/^\}/i.test(line) && ctx.scratch.debug.start) {
-      ctx.scratch.debug.start = false;
+      return (ctx.scratch.debug.start = false);
     } else if (!ctx.scratch.debug.start) {
-      ctx.scratch.debug.edited += line + "\n";
+      return (ctx.scratch.debug.edited += line + "\n");
     }
   });
 
