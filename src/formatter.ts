@@ -98,7 +98,4 @@ export class Formatter {
 }
 
 export const formatter = new Formatter();
-
-formatter.format("&foo $.fo = \n bar").then(({ data }) => console.log(data));
-
 export { Next };

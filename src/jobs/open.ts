@@ -73,11 +73,13 @@ export default async (ctx: Context, next: Next) => {
       // If it's not a valid github url, then try using fs.
       try {
         // If the path is actually a file...
-        ctx.scratch.base = dirname(resolve(path));
-        if (existsSync(resolve(path))) {
+        if (!ctx.scratch.base) ctx.scratch.base = dirname(resolve(path));
+        if (existsSync(resolve(join(ctx.scratch.base, path)))) {
           if (!ctx.cache.has(path)) {
             // Save the file to the cache.
-            const text = readFileSync(resolve(path), { encoding: "utf-8" });
+            const text = readFileSync(resolve(join(ctx.scratch.base, path)), {
+              encoding: "utf-8",
+            });
             ctx.cache.set(ctx.scratch.base, text);
 
             // scan the file for more includes.
@@ -88,7 +90,7 @@ export default async (ctx: Context, next: Next) => {
           }
         } else {
           // Else if it's not a valid path, try joining it with the base directory.
-          const altpath = resolve(join(ctx.path, path));
+          const altpath = resolve(join(ctx.scratch.base, path));
           if (!ctx.cache.has(altpath)) {
             const text = readFileSync(altpath, { encoding: "utf-8" });
             ctx.cache.set(altpath, text);
