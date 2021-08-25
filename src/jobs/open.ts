@@ -98,7 +98,10 @@ export default async (ctx: Context, next: Next) => {
             return scan(text);
           }
         }
-      } catch {}
+      } catch (error) {
+        ctx.scratch.errors = [];
+        ctx.scratch.errors.push(error.message);
+      }
     }
   };
 

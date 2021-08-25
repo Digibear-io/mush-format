@@ -98,4 +98,5 @@ export class Formatter {
 }
 
 export const formatter = new Formatter();
+
 export { Next };
