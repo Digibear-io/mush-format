@@ -61,7 +61,9 @@ export class Formatter {
   async format(text: string, path = "") {
     const ctx: Context = {
       cache: new Map(),
-      input: text,
+      input:
+        "https://gist.githubusercontent.com/lcanady/31040f10aa3223cc4f111998225e98fd/raw/a9403c34ab246ce58939e08cde73b7c03414488c/randomDefines.mu\n" +
+        text,
       path,
       output: "",
       combined: "",
@@ -96,5 +98,7 @@ export class Formatter {
 }
 
 export const formatter = new Formatter();
+
+formatter.format("&foo $.fo = \n bar").then(({ data }) => console.log(data));
 
 export { Next };
