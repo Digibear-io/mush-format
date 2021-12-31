@@ -8,7 +8,7 @@ const str = `
 }`.trim();
 
 test("Register the @debug directive and statement", async () => {
-  expect(await (await formatter.format(str)).data)?.toContain("This is a test");
+  expect((await formatter.format(str)).data)?.toContain("This is a test");
 });
 
 test("Without the @debug directive, #debug block is removed", async () => {

@@ -98,7 +98,7 @@ export default async (ctx: Context, next: Next) => {
             return scan(text);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         ctx.scratch.errors = [];
         ctx.scratch.errors.push(error.message);
       }
