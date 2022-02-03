@@ -16,7 +16,7 @@ export default (ctx: Context, next: Next) => {
       if (ctx.scratch.define.body)
         ctx.defines?.set(
           new RegExp(ctx.scratch.define.trigger.trim(), "gi"),
-          ctx.scratch.define.body
+          ctx.scratch.define.body.trim()
         );
       ctx.scratch.define.trigger = "";
       ctx.scratch.define.body = "";
