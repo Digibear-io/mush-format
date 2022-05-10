@@ -4,6 +4,7 @@ import compress from "./jobs/compress";
 import post from "./jobs/post";
 import pipeline, { Middleware, Next, Pipe } from "./middleware";
 import defines from "./jobs/@define";
+import ast from "./jobs/ast";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -49,7 +50,7 @@ export class Formatter {
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(defines, render);
     this.stack.get("compress")?.use(compress);
-    this.stack.get("post")?.use(post);
+    this.stack.get("post")?.use(ast, post);
   }
 
   /**

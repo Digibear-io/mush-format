@@ -3,13 +3,13 @@ import { Context, Next } from "../formatter";
 export default (ctx: Context, next: Next) => {
   // compression 1
   ctx.scratch.current = ctx.scratch
-    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, " ") // remove comments
+    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, "") // remove comments
     .replace(/^#.*/gim, "") // remove unevaluated tags.
     .replace(/\n+/g, "\n")
     .split("\n")
     .reduce((acc: string, curr: string) => {
       curr.match(/^[ \t]+/) // Does line start with a space?
-        ? (acc += curr.trimLeft())
+        ? (acc += curr.trimStart())
         : (acc += "\n" + curr);
       return acc;
     }, "")
