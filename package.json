@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@types/valid-url": "^1.0.3",
-    "@ursamu/parser": "^1.2.1",
     "commander": "^6.2.0",
     "inquirer": "^7.3.3",
     "isomorphic-fetch": "^3.0.0",
