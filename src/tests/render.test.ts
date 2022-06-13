@@ -29,7 +29,11 @@ test("Headers and footers render in the file.", async () => {
 
 test("#include pulls in a github archive", async () => {
   expect(
-    (await formatter.format("#include git:lcanady/archive-test")).data!
+    (
+      await formatter.format(
+        "#include https://raw.githubusercontent.com/lcanady/archive-test/main/index.mu"
+      )
+    ).data!
   ).toContain("file 4!");
 });
 

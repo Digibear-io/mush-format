@@ -1,4 +1,3 @@
-import { Parser } from "@ursamu/parser";
 import { Context, Next } from "../formatter";
 
 export default (ctx: Context, next: Next) => {

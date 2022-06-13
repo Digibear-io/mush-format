@@ -33,6 +33,7 @@
     "prepublish": "yarn build"
   },
   "dependencies": {
+    "@types/node": "^17.0.42",
     "@types/valid-url": "^1.0.3",
     "commander": "^6.2.0",
     "inquirer": "^7.3.3",

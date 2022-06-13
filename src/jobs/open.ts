@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "fs";
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
 import _fetch from "isomorphic-fetch";
 import { dirname, join, resolve } from "path";
 import replace from "string-replace-async";
@@ -7,100 +8,41 @@ import validURL from "valid-url";
 import { Context, Next } from "../formatter";
 
 export default async (ctx: Context, next: Next) => {
-  // Replace all references of #insert with compiled files recursively.
-
   const read = async (path: string): Promise<string | undefined> => {
-    const match = path.match(
-      /git[hub]*:\s*(\w+)\/([^@\/]+)(?:@([^\/]+))?(?:\/(.*))?/i
-    );
+    // first we check if the path is a url.
+    if (validURL.isUri(path)) {
+      // if it is, we fetch the file and return the contents.
+      const response = await _fetch(path);
+      ctx.scratch.base = dirname(path);
+      return scan(await response.text());
+    }
 
-    try {
-      // Check to see if it's a github link
-      if (match) {
-        // If yes, set the base directory, and pull the first file from
-        // the github repo. Cache the results.
+    // if it's not, we check if it's a file. Open it and return the contents.
+    if (existsSync(path)) {
+      ctx.scratch.base = dirname(path);
+      return scan(await readFile(path, "utf8"));
+    }
 
-        ctx.scratch.base = encodeURI(
-          `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${
-            match[3] || "main"
-          }/${match[4] || ""}`
-        );
-        let last = ctx.scratch.base.split("/");
-        last = last.pop();
-        if (validURL.isWebUri(`${ctx.scratch.base}`) && /\..+$/.test(last)) {
-          const results = await _fetch(ctx.scratch.base);
-          if (!ctx.cache.has(ctx.scratch.base)) {
-            // Save the file to the cache.
-            const text = await results.text();
-            ctx.cache.set(`${ctx.scratch.base}`, text);
+    // if the file path starts with a dot, or we resolve it relative to the current file.
+    if (path.startsWith(".") || path.startsWith("/")) {
+      path = join(ctx.scratch.base, path);
 
-            // scan the file for more includes.
-            return scan(text);
-          }
-        } else {
-          const results = await _fetch(`${ctx.scratch.base}/index.mu`);
-          if (!ctx.cache.has(`${ctx.scratch.base}/index.mu`)) {
-            // Save the file to the cache.
-            const text = await results.text();
-            ctx.cache.set(`${ctx.scratch.base}/index.mu`, text);
-
-            // scan the file for more includes.
-            return scan(text);
-          }
-        }
+      //if it's a file, open it and return the contents
+      if (existsSync(path)) {
+        ctx.scratch.base = dirname(path);
+        return scan(await readFile(path, "utf8"));
       } else {
-        // If No, check to see if if fetching the file with the base
-        // directory works.
-
-        const url = new URL(path, ctx.scratch.base).toString();
-        if (validURL.isWebUri(url)) {
-          if (!ctx.cache.has(url)) {
-            const results = await _fetch(url);
-            const text = await results.text();
-            ctx.cache.set(url, text);
-
-            // If yes, recursively check the file for more includes.
-            ctx.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-            return scan(text);
-          } else {
-            // Already scanned,  Doesn't need further processing
-            ctx.scratch.base = url.substring(0, url.lastIndexOf("/")) + "/";
-            return ctx.cache.get(url);
-          }
+        // if it's not, we check to see if it's a url.
+        if (validURL.isUri(path)) {
+          // if it is, we fetch the file and return the contents.
+          const response = await _fetch(path);
+          ctx.scratch.base = dirname(path);
+          return scan(await response.text());
         }
       }
-    } catch (error) {
-      // If it's not a valid github url, then try using fs.
-      try {
-        // If the path is actually a file...
-        if (!ctx.scratch.base) ctx.scratch.base = dirname(resolve(path));
-        if (existsSync(resolve(join(ctx.scratch.base, path)))) {
-          if (!ctx.cache.has(path)) {
-            // Save the file to the cache.
-            const text = readFileSync(resolve(join(ctx.scratch.base, path)), {
-              encoding: "utf-8",
-            });
-            ctx.cache.set(ctx.scratch.base, text);
 
-            // scan the file for more includes.
-            return scan(text);
-          } else {
-            // Already scanned, no further action needed.
-            ctx.scratch.base = resolve(path);
-          }
-        } else {
-          // Else if it's not a valid path, try joining it with the base directory.
-          const altpath = resolve(join(ctx.scratch.base, path));
-          if (!ctx.cache.has(altpath)) {
-            const text = readFileSync(altpath, { encoding: "utf-8" });
-            ctx.cache.set(altpath, text);
-            ctx.scratch.base = dirname(altpath);
-            return scan(text);
-          }
-        }
-      } catch {
-        throw new Error("Unable to fomrmat text");
-      }
+      // if it's not a file or a url, we return undefined.
+      throw new Error(`File not found: ${path}`);
     }
   };
 
@@ -130,16 +72,13 @@ export default async (ctx: Context, next: Next) => {
 
     return await replace(
       results,
-      /#include\s+?(.*)/g,
+      /#include\s+(.*)/g,
       async (...args: string[]) => {
         return (await read(args[1])) || "";
       }
     );
   }
 
-  // Kick off the recursive loop.
-  if (/^http|https/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
-  if (/^gi[thub]+.*/i.test(ctx.input)) ctx.input = "#include " + ctx.input;
   ctx.scratch.current = "";
   ctx.scratch.current = await scan(ctx.input);
   ctx.combined = ctx.scratch.current;
