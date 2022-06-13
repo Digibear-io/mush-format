@@ -17,28 +17,15 @@ export default async (ctx: Context, next: Next) => {
       return scan(await response.text());
     }
 
-    // if it's not, we check if it's a file. Open it and return the contents.
-    if (existsSync(path)) {
-      ctx.scratch.base = dirname(path);
-      return scan(readFileSync(path, "utf8"));
-    }
-
     // if the file path starts with a dot, or we resolve it relative to the current file.
     if (path.startsWith(".") || path.startsWith("/")) {
       path = join(ctx.scratch.base, path);
 
-      //if it's a file, open it and return the contents
-      if (existsSync(path)) {
+      if (validURL.isUri(path)) {
+        // if it is, we fetch the file and return the contents.
+        const response = await _fetch(path);
         ctx.scratch.base = dirname(path);
-        return scan(readFileSync(path, "utf8"));
-      } else {
-        // if it's not, we check to see if it's a url.
-        if (validURL.isUri(path)) {
-          // if it is, we fetch the file and return the contents.
-          const response = await _fetch(path);
-          ctx.scratch.base = dirname(path);
-          return scan(await response.text());
-        }
+        return scan(await response.text());
       }
 
       // if it's not a file or a url, we return undefined.
