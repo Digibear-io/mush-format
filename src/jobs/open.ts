@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFileSync } from "fs";
 import { existsSync } from "fs";
 import _fetch from "isomorphic-fetch";
 import { dirname, join, resolve } from "path";
@@ -20,7 +20,7 @@ export default async (ctx: Context, next: Next) => {
     // if it's not, we check if it's a file. Open it and return the contents.
     if (existsSync(path)) {
       ctx.scratch.base = dirname(path);
-      return scan(await readFile(path, "utf8"));
+      return scan(readFileSync(path, "utf8"));
     }
 
     // if the file path starts with a dot, or we resolve it relative to the current file.
@@ -30,7 +30,7 @@ export default async (ctx: Context, next: Next) => {
       //if it's a file, open it and return the contents
       if (existsSync(path)) {
         ctx.scratch.base = dirname(path);
-        return scan(await readFile(path, "utf8"));
+        return scan(readFileSync(path, "utf8"));
       } else {
         // if it's not, we check to see if it's a url.
         if (validURL.isUri(path)) {
