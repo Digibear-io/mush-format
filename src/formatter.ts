@@ -4,7 +4,6 @@ import compress from "./jobs/compress";
 import post from "./jobs/post";
 import pipeline, { Middleware, Next, Pipe } from "./middleware";
 import defines from "./jobs/@define";
-import ast from "./jobs/ast";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -50,7 +49,7 @@ export class Formatter {
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(defines, render);
     this.stack.get("compress")?.use(compress);
-    this.stack.get("post")?.use(ast, post);
+    this.stack.get("post")?.use(post);
   }
 
   /**
@@ -81,7 +80,7 @@ export class Formatter {
       await this.stack.get("compress")?.execute(ctx);
       await this.stack.get("post")?.execute(ctx);
     } catch (error) {
-      console.log("Error: Unable to process requested file.\nErrpr: " + error);
+      console.log("Error: Unable to process requested file.\nError: " + error);
     }
 
     return {
@@ -99,3 +98,7 @@ export class Formatter {
 export const formatter = new Formatter();
 
 export { Next };
+
+// formatter
+//   .format("/home/kumakun/github/bridgetownmux/src/roomparent.mu")
+//   .then((result) => console.log(result.data));

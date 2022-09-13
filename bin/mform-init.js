@@ -9,19 +9,34 @@ program.option("-y --yes", "Quick install with base settings.");
 
 program.parse(process.argv);
 
-const yaml = (options = {}) =>
-  `
-Project: ${options.project.replace(/\s/g, "-") || "project"}
-author: ${options.author || '" "'}
-main: ${options.main || "index.mush"}
-repo: ${options.repo ? options.repo : '" "'}
-Description: ${options.desc ? options.desc : '" "'}
-include: 
-  - /src/**/*
-`.trim();
+const project = (options = {}) => {
+  const { project, main, author, repo, desc } = options;
 
-const header =
-  "@@ To format this project, visit:  https://github.com/digibear-io/mush-format\n\n".trim();
+  return {
+    project,
+    author,
+    main,
+    repo,
+    desc,
+  };
+};
+
+console.log(`
+ __   __  __   __  _______  __   __                    
+|  |_|  ||  | |  ||       ||  | |  |                   
+|       ||  | |  ||  _____||  |_|  |                   
+|       ||  |_|  || |_____ |       |                   
+|       ||       ||_____  ||       |                   
+| ||_|| ||       | _____| ||   _   |                   
+|_|   |_||_______||_______||__| |__|                   
+ _______  _______  ______    __   __  _______  _______ 
+|       ||       ||    _ |  |  |_|  ||   _   ||       |
+|    ___||   _   ||   | ||  |       ||  |_|  ||_     _|
+|   |___ |  | |  ||   |_||_ |       ||       |  |   |  
+|    ___||  |_|  ||    __  ||       ||       |  |   |  
+|   |    |       ||   |  | || ||_|| ||   _   |  |   |  
+|___|    |_______||___|  |_||_|   |_||__| |__|  |___|
+`);
 
 if (program.yes) {
   const path = resolve(program.args[0]).toLowerCase();
@@ -30,7 +45,10 @@ if (program.yes) {
     try {
       mkdirSync(path, { recursive: true });
       mkdirSync(path, { recursive: true });
-      writeFileSync(path + "/formatter.yml", yaml());
+      writeFileSync(
+        path + "/formatter.json",
+        project(JSON.stringify(program()))
+      );
       writeFileSync(path + "/.gitignore", ".tmp");
       writeFileSync(path + "/index.mush", header);
       console.log("[MFORM] Project created with default values.");
@@ -51,13 +69,13 @@ if (program.yes) {
         type: "input",
         name: "author",
         message: "Author?",
-        default: "N/A",
+        default: "",
       },
       {
         type: "input",
         name: "desc",
         message: "Project Description?",
-        default: "N/A",
+        default: "",
       },
       {
         name: "input",
@@ -69,21 +87,24 @@ if (program.yes) {
         type: "input",
         name: "main",
         message: "Project entry point?",
-        default: "index.mush",
+        default: "index.mu",
       },
       {
         type: "input",
         name: "repo",
         message: "GitHub repo?",
-        default: "N/A",
+        default: "",
       },
     ])
     .then((answers) => {
       try {
         const path = resolve(join(answers.path, answers.project)).toLowerCase();
         mkdirSync(path, { recursive: true });
-        writeFileSync(path + "/formatter.yml", yaml(answers));
-        writeFileSync(path + "/index.mush", header);
+        writeFileSync(
+          path + "/formatter.json",
+          JSON.stringify(project(answers))
+        );
+        writeFileSync(path + "/index.mu", header);
         writeFileSync(path + "/.gitignore", ".tmp");
         console.log("[MFORM] Project created.");
       } catch (error) {
