@@ -37,7 +37,7 @@ export default (ctx: Context, next: Next) => {
 
   // compression 2
   ctx.output = ctx.scratch
-    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, " ") // remove comments
+    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|^\/\/.*$/gm, "") // remove comments
     .replace(/^#.*/gim, "") // remove unevaluated tags.
     .replace(/\n+/g, "\n")
     .split("\n")

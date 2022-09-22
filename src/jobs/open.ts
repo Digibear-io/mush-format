@@ -19,15 +19,14 @@ export default async (ctx: Context, next: Next) => {
     }
 
     // if it's not, we check if it's a file. Open it and return the contents.
-
-    if (existsSync(resolve(__dirname, path))) {
-      path = resolve(__dirname, path);
+    if (existsSync(join(__dirname, `../${path}`))) {
+      path = join(__dirname, `../${path}`);
       ctx.scratch.base = dirname(path);
       return scan(await readFile(path, "utf8"));
     }
 
     // if the file path starts with a dot, or we resolve it relative to the current file.
-    if (path.startsWith(".") || path.startsWith("/")) {
+    if (path.startsWith("./") || path.startsWith("/")) {
       path = join(ctx.scratch.base, path);
 
       //if it's a file, open it and return the contents
@@ -47,6 +46,8 @@ export default async (ctx: Context, next: Next) => {
       // if it's not a file or a url, we return undefined.
       throw new Error(`File not found: ${path}`);
     }
+
+    return scan(path);
   };
 
   // Scan for includes and open the the file.

@@ -100,5 +100,7 @@ export const formatter = new Formatter();
 export { Next };
 
 // formatter
-//   .format("/home/kumakun/github/bridgetownmux/src/roomparent.mu")
+//   .format(
+//     "https://raw.githubusercontent.com/lcanady/bridgetownmux/master/src/sheet.mu"
+//   )
 //   .then((result) => console.log(result.data));
