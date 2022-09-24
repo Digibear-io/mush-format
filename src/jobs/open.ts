@@ -1,12 +1,11 @@
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import _fetch from "isomorphic-fetch";
-import { dirname, join, resolve } from "path";
+import { dirname, join } from "path";
 import replace from "string-replace-async";
 import validURL from "valid-url";
 
 import { Context, Next } from "../formatter";
-import { cwd } from "process";
 
 export default async (ctx: Context, next: Next) => {
   const read = async (path: string): Promise<string | undefined> => {
@@ -26,8 +25,16 @@ export default async (ctx: Context, next: Next) => {
     }
 
     // if the file path starts with a dot, or we resolve it relative to the current file.
-    if (path.startsWith("./") || path.startsWith("/")) {
-      path = join(ctx.scratch.base, path);
+    if (
+      path.startsWith("./") ||
+      path.startsWith("/") ||
+      path.startsWith("../")
+    ) {
+      if (ctx.scratch.base) {
+        path = join(ctx.scratch.base, path);
+      } else {
+        path = join(__dirname, `../${path}`);
+      }
 
       //if it's a file, open it and return the contents
       if (existsSync(path)) {

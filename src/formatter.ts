@@ -100,7 +100,5 @@ export const formatter = new Formatter();
 export { Next };
 
 // formatter
-//   .format(
-//     "https://raw.githubusercontent.com/lcanady/bridgetownmux/master/src/sheet.mu"
-//   )
+//   .format("./tests/mocks/code.mu")
 //   .then((result) => console.log(result.data));

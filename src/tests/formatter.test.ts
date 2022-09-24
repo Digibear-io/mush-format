@@ -6,6 +6,12 @@ test("Return a string.", async () => {
   expect(data).toMatch("This is a test");
 });
 
+test("format a file from a subdirectory.", async () => {
+  expect((await formatter.format("./tests/mocks/code.mu")).data).toMatch(
+    "&cmd.foo #dbref = $+foo *:@pemit %#= Foo %0;"
+  );
+});
+
 test("Add a plugin.", async () => {
   expect(
     (
