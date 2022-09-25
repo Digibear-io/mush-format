@@ -9,6 +9,7 @@ import { Context, Next } from "../formatter";
 
 export default async (ctx: Context, next: Next) => {
   const read = async (path: string): Promise<string | undefined> => {
+    console.log("Reading", ctx.path);
     // first we check if the path is a url.
     if (validURL.isUri(path)) {
       // if it is, we fetch the file and return the contents.
@@ -18,10 +19,15 @@ export default async (ctx: Context, next: Next) => {
     }
 
     // if it's not, we check if it's a file. Open it and return the contents.
-    if (existsSync(join(__dirname, `../${path}`))) {
-      path = join(__dirname, `../${path}`);
+    if (existsSync(join(ctx.path || __dirname, `../${path}`))) {
+      path = join(ctx.path || __dirname, `../${path}`);
       ctx.scratch.base = dirname(path);
       return scan(await readFile(path, "utf8"));
+    }
+
+    if (existsSync(join(ctx.path, path))) {
+      ctx.scratch.base = ctx.path;
+      return scan(await readFile(join(ctx.path, path), "utf8"));
     }
 
     // if the file path starts with a dot, or we resolve it relative to the current file.
@@ -33,7 +39,7 @@ export default async (ctx: Context, next: Next) => {
       if (ctx.scratch.base) {
         path = join(ctx.scratch.base, path);
       } else {
-        path = join(__dirname, `../${path}`);
+        path = join(ctx.path || __dirname, `../${path}`);
       }
 
       //if it's a file, open it and return the contents
@@ -51,7 +57,7 @@ export default async (ctx: Context, next: Next) => {
       }
 
       // if it's not a file or a url, we return undefined.
-      throw new Error(`File not found: ${path}`);
+      throw new Error(`File not found: ${ctx.path}`);
     }
 
     return scan(path);

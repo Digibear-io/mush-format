@@ -80,7 +80,7 @@ export class Formatter {
       await this.stack.get("compress")?.execute(ctx);
       await this.stack.get("post")?.execute(ctx);
     } catch (error) {
-      console.log("Error: Unable to process requested file.\nError: " + error);
+      ctx.output += "\nError: Unable to process requested file.\n" + error;
     }
 
     return {
