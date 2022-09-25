@@ -1,4 +1,5 @@
 /// <reference types="jest" />
+import { join } from "path";
 import { formatter } from "../formatter";
 
 test("Return a string.", async () => {
@@ -7,9 +8,10 @@ test("Return a string.", async () => {
 });
 
 test("format a file from a subdirectory.", async () => {
-  expect((await formatter.format("./tests/mocks/code.mu")).data).toMatch(
-    "&cmd.foo #dbref = $+foo *:@pemit %#= Foo %0;"
-  );
+  expect(
+    (await formatter.format("./tests/mocks/code.mu", join(__dirname, "../")))
+      .data
+  ).toMatch("&cmd.foo #dbref = $+foo *:@pemit %#= Foo %0;");
 });
 
 test("Add a plugin.", async () => {
