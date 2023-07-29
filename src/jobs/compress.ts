@@ -1,54 +1,30 @@
 import { Context, Next } from "../formatter";
+import { replaceDefines } from "../utils/replaceDefines";
 
 export default (ctx: Context, next: Next) => {
-  // compression 1
+  // Remove comments and unevaluated tags
   ctx.scratch.current = ctx.scratch
-    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|([^:]|^)\/\/.*$/gm, "") // remove comments
-    .replace(/^#.*/gim, "") // remove unevaluated tags.
+    .current!.replace(/^#[^\n]*$/gm, "") // remove comments that start with // or #
+    .replace(/\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//gm, "") // remove comments that start with /*
     .replace(/\n+/g, "\n")
     .split("\n")
     .reduce((acc: string, curr: string) => {
-      curr.match(/^[ \t]+/) // Does line start with a space?
-        ? (acc += curr.trimStart())
-        : (acc += "\n" + curr);
-      return acc;
-    }, "")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n-/g, "\n");
-
-  // Replace defines.  This hack lets me have @defines split into multiple lines without having
-  // to go through the code line by line.
-  ctx.defines?.forEach((v, k) => {
-    ctx.scratch.current = ctx.scratch.current?.replace(
-      k,
-      (...args: string[]) => {
-        let registers = args;
-        // Search through the value string for registers and replace.
-        return v.replace(/\$([0-9])/g, (...args) => {
-          if (registers[parseInt(args[1])]) {
-            return registers[parseInt(args[1])].trim();
-          } else {
-            return "";
-          }
-        });
+      if (curr.startsWith("@@")) {
+        acc += "\n" + curr;
+      } else if (curr.match(/^[ \t]+/)) {
+        acc += curr.trimStart();
+      } else {
+        acc += "\n" + curr;
       }
-    );
-  });
-
-  // compression 2
-  ctx.output = ctx.scratch
-    .current!.replace(/^\/\*[\s\S]*?\*\/[\s\S]*?$|^\/\/.*$/gm, "") // remove comments
-    .replace(/^#.*/gim, "") // remove unevaluated tags.
-    .replace(/\n+/g, "\n")
-    .split("\n")
-    .reduce((acc: string, curr: string) => {
-      curr.match(/^[ \t]+/) // Does line start with a space?
-        ? (acc += curr.trimLeft())
-        : (acc += "\n" + curr);
       return acc;
     }, "")
     .replace(/[ \t]+/g, " ")
     .replace(/\n-/g, "\n");
+
+  // Replace defines
+  ctx.scratch.current = replaceDefines(ctx, ctx.scratch.current);
+  ctx.output = replaceDefines(ctx, ctx.scratch.current);
 
   next();
 };

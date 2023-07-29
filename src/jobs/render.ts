@@ -1,6 +1,7 @@
 import { Context, Next } from "../formatter";
+import { replaceDefines } from "../utils/replaceDefines";
 
-export default (ctx: Context, next: Next) => {
+export default async (ctx: Context, next: Next) => {
   // Process headers
   ctx.scratch.current = ctx.scratch.current?.replace(
     /#header\s+(.*)\s?=\s?(.*)/gim,
@@ -53,22 +54,7 @@ export default (ctx: Context, next: Next) => {
   ctx.scratch.current = ctx.scratch.debug.edited;
 
   // Replace defines.
-  ctx.defines?.forEach((v, k) => {
-    ctx.scratch.current = ctx.scratch.current?.replace(
-      k,
-      (...args: string[]) => {
-        let registers = args;
-        // Search through the value string for registers and replace.
-        return v.replace(/\$([0-9])/g, (...args) => {
-          if (registers[parseInt(args[1])]) {
-            return registers[parseInt(args[1])].trim();
-          } else {
-            return "";
-          }
-        });
-      }
-    );
-  });
+  ctx.scratch.current = replaceDefines(ctx, ctx.scratch.current || "");
 
   next();
 };
