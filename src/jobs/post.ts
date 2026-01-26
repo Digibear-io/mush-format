@@ -14,15 +14,16 @@ export default (ctx: Context, next: Next) => {
   });
 
   // look for object &attribute entries. If installer is true, add a test.
-  ctx.output = ctx.output.replace(/&(.*)\s+?(.*)/gi, (...args: string[]) => {
+  ctx.output = ctx.output.replace(/&(\S+)\s+(.*)/gi, (...args: string[]) => {
     if (ctx.installer) {
 
 
+      const obj = args[2].split("=")[0].trim();
       return (
         `${args[0]}\n` +
         `think %ch%cyformat >>%cn Created command '%ch${args[1]
           .trim()
-          .toUpperCase()}%cn' on '%ch${args[2].trim()}%cn' [if(hasattr(${args[2].trim()}, ${args[1].trim()}),%ch%cG PASS %cn,%ch%cR FAIL %cn)]`
+          .toUpperCase()}%cn' on '%ch${obj}%cn' [if(hasattr(${obj}, ${args[1].trim()}),%ch%cG PASS %cn,%ch%cR FAIL %cn)]`
       );
     }
     return args[0];

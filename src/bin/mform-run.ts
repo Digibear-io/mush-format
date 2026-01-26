@@ -4,7 +4,7 @@ import { program } from "commander";
 import { stat, writeFile, readFile, mkdir } from "fs/promises";
 import { resolve, dirname, join } from "path";
 import { formatter } from "../formatter";
-import YAML from "yaml";
+// import YAML from "yaml";
 // @ts-ignore
 import LineDiff from "line-diff";
 
@@ -83,10 +83,10 @@ async function parseFile() {
 }
 
 async function parseDir() {
-  const conf = await readFile(join(args[0], "formatter.yml"), {
+  const conf = await readFile(join(args[0], "mush.json"), {
     encoding: "utf-8",
   });
-  const settings = YAML.parse(conf);
+  const settings = JSON.parse(conf);
   const fileName = settings.main ? settings.main : "./index.mush";
 
   const path = resolve(join(args[0], fileName));

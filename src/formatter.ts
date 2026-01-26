@@ -9,6 +9,7 @@ import docParser from "./jobs/doc-parser";
 import linter from "./jobs/linter";
 import resolve from "./jobs/resolve";
 import template from "./jobs/template";
+import install from "./jobs/install";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -38,6 +39,7 @@ export interface Context {
   defines?: Map<RegExp, string>;
   headers: Header[];
   footers: Header[];
+  banner?: string | string[];
   output: string;
   combined: string;
   cache: Map<string, any>;
@@ -61,7 +63,7 @@ export class Formatter {
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(resolve, template, testGen, docParser, defines, render);
     this.stack.get("compress")?.use(linter, compress);
-    this.stack.get("post")?.use(post);
+    this.stack.get("post")?.use(install, post);
   }
 
   /**
@@ -70,12 +72,14 @@ export class Formatter {
    * @param layer The job to be added
    */
 
-  async format(text: string, path = "", filename?: string) {
+  async format(text: string, path = "", filename?: string, options: { installer?: boolean; banner?: string | string[] } = {}) {
     const ctx: Context = {
       cache: new Map(),
       input: text,
       path,
       filename,
+      installer: options.installer,
+      banner: options.banner,
       output: "",
       combined: "",
       defines: new Map(),

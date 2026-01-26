@@ -5,7 +5,7 @@ import { stat, writeFile, readFile, mkdir } from "fs/promises";
 import { watch } from "fs";
 import { resolve, dirname, join } from "path";
 import { formatter } from "../formatter";
-import YAML from "yaml";
+// import YAML from "yaml";
 // @ts-ignore
 import LineDiff from "line-diff";
 
@@ -68,7 +68,7 @@ async function parseFile(inputPath: string, options: any) {
   const diffIn = await tmp(DIFF_PATH);
   const file = await readFile(resolve(inputPath), { encoding: "utf-8" });
 
-  const { data } = await formatter.format(file, dirname(inputPath), fileName);
+  const { data } = await formatter.format(file, dirname(inputPath), fileName, { installer: options.installScript });
   let output: string[] = [];
   await writeFile(DIFF_PATH, data);
 
@@ -86,12 +86,13 @@ async function parseFile(inputPath: string, options: any) {
 }
 
 async function parseDir(inputPath: string, options: any) {
-  const confPath = join(inputPath, "formatter.yml");
+  /* const confPath = join(inputPath, "formatter.yml"); */
+  const confPath = join(inputPath, "mush.json");
   let settings: any = {};
   
   try {
       const conf = await readFile(confPath, { encoding: "utf-8" });
-      settings = YAML.parse(conf);
+      settings = JSON.parse(conf);
   } catch (e) {
       // Fallback or error if necessary, but original code assumed existence or failed?
       // Original code: await readFile(...) without try/catch would fail if missing.
@@ -105,7 +106,7 @@ async function parseDir(inputPath: string, options: any) {
       // Try to read it again without try/catch to throw error if needed
       // or just assume default
        const conf = await readFile(confPath, { encoding: "utf-8" });
-       settings = YAML.parse(conf);
+       settings = JSON.parse(conf);
   }
 
   const fileName = settings.main ? settings.main : "./index.mush";
@@ -117,7 +118,7 @@ async function parseDir(inputPath: string, options: any) {
   await ensureDirectoryExistence(DIFF_PATH);
   const diffIn = await tmp(DIFF_PATH);
 
-  const { data } = await formatter.format(file, inputPath);
+  const { data } = await formatter.format(file, inputPath, undefined, { installer: options.installScript });
   let output: string[] = [];
   await writeFile(DIFF_PATH, data);
 
@@ -158,7 +159,7 @@ async function executeRun(inputPath: string, options: any) {
                 // If args[0] is a path that doesn't exist, stat throws.
                 // Then it tries to format 'args[0]' as a string content?
                 // That seems to be the fallback logic. 
-                const { data } = await formatter.format(inputPath);
+                const { data } = await formatter.format(inputPath, "", undefined, { installer: options.installScript });
                 console.log(data);
              } catch (e) {
                  console.error(err);
@@ -179,6 +180,7 @@ program
     "-d --diff",
     "Only print the differences from the previous output file."
   )
+  .option("-i --install-script", "Compile output as an Installer Script")
   .option("-w --watch", "Watch mode") // Added watch flag
   .action(async (path, options) => {
     // Initial Run

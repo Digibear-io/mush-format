@@ -10,8 +10,7 @@
     "preprocessor"
   ],
   "files": [
-    "dist/**/*.js ",
-    "bin/**/*.js",
+    "dist/**/*.js",
     "dist/**/*.ts",
     "mushformatter.jpg"
   ],
@@ -30,7 +29,7 @@
   "scripts": {
     "build": "rm -rf ./dist && npx tsc -p ./tsconfig.json",
     "test": "jest",
-    "prepublish": "yarn build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@types/node": "^17.0.42",
@@ -41,8 +40,7 @@
     "line-diff": "^2.1.1",
     "prettier": "^3.0.0",
     "string-replace-async": "^2.0.0",
-    "valid-url": "^1.0.9",
-    "yaml": "^1.10.0"
+    "valid-url": "^1.0.9"
   },
   "devDependencies": {
     "@types/commander": "^2.12.2",

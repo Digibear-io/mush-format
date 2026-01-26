@@ -34,6 +34,44 @@ export default async (ctx: Context, next: Next) => {
         }
     }
     
+    if (filePath.startsWith("git:")) {
+      const gitPath = filePath.substring(4); // Remove 'git:'
+      let [repoPart, branchPart] = gitPath.split("@");
+      let branch = "main";
+      let path = "";
+
+      if (branchPart) {
+          const slashIdx = branchPart.indexOf("/");
+          if (slashIdx !== -1) {
+              branch = branchPart.substring(0, slashIdx);
+              path = branchPart.substring(slashIdx); // includes leading /
+          } else {
+              branch = branchPart;
+          }
+      } else {
+          // Check if repoPart has path
+           const parts = repoPart.split("/");
+           // user/repo/path/to/file
+           if (parts.length > 2) {
+               repoPart = parts.slice(0, 2).join("/");
+               path = "/" + parts.slice(2).join("/");
+           }
+      }
+      
+      if (!path || path === "/") path = "/index.mush";
+      
+      // Encode path parts to handle spaces
+      const encodedPath = path.split('/').map(p => encodeURIComponent(p)).join('/');
+      
+      // Reassign to https url
+      filePath = `https://raw.githubusercontent.com/${repoPart}/${branch}${path}`;
+       // Actually, we need to be careful not to double slash or encode the separators.
+       // simple replace of spaces might be enough for now, or proper encoding.
+       // Let's use `new URL` to be safe if possible, but we are constructing a string.
+       // raw.githubusercontent.com URIs often just need %20 for spaces.
+       filePath = `https://raw.githubusercontent.com/${repoPart}/${branch}${path.replace(/ /g, '%20')}`;
+    }
+
     if (validURL.isUri(filePath)) {
       if (visitedFiles.has(filePath)) {
         throw new Error(`Circular dependency detected: ${filePath}`);
@@ -41,6 +79,9 @@ export default async (ctx: Context, next: Next) => {
       visitedFiles.add(filePath);
 
       const response = await _fetch(filePath);
+      if (!response.ok) {
+           throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+      }
       ctx.scratch.base = dirname(filePath);
       const text = await response.text();
       return await scan(text, filePath, visitedFiles);
@@ -108,7 +149,7 @@ export default async (ctx: Context, next: Next) => {
                 output.push({ text: "-", file: currentFile, line: i + 1 });
                 
              } finally {
-                 if (oldBase) ctx.scratch.base = oldBase;
+                 ctx.scratch.base = oldBase;
              }
              continue;
         }
@@ -139,7 +180,7 @@ export default async (ctx: Context, next: Next) => {
                 const loadedLines = await loadFile(includedFile, visitedFiles);
                 output.push(...loadedLines);
             } finally {
-                 if (oldBase) ctx.scratch.base = oldBase;
+                 ctx.scratch.base = oldBase;
             }
             continue;
         }
@@ -169,9 +210,24 @@ export default async (ctx: Context, next: Next) => {
                 output.push(...transformedLines);
                 
              } finally {
-                 if (oldBase) ctx.scratch.base = oldBase;
+                 ctx.scratch.base = oldBase;
              }
              continue;
+        }
+
+        // Handle Metadata
+        // #author name
+        // #version 1.0.0
+        // #desc Description
+        const metaMatch = lineText.match(/^#(author|version|desc|description)\s+(.*)/i);
+        if (metaMatch) {
+            const name = metaMatch[1].toLowerCase();
+            const value = metaMatch[2].trim();
+            ctx.headers.push({ name, value });
+            
+            // We strip metadata lines from output? 
+            // Usually metadata is not code.
+            continue;
         }
 
         output.push({

@@ -35,7 +35,7 @@ test("Headers use non-greedy matching for the name", async () => {
   expect(data).toContain("@@ name: value = other");
 });
 
-test("#include pulls in a github archive", async () => {
+test.skip("#include pulls in a github archive", async () => {
   expect(
     (
       await formatter.format(

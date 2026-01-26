@@ -6,8 +6,14 @@ export function replaceDefines(ctx: Context, text: string) {
       let registers = args;
       // Search through the value string for registers and replace.
       return v.replace(/\$([0-9])/g, (...args) => {
-        if (registers[parseInt(args[1])]) {
-          return registers[parseInt(args[1])].trim();
+        const val = registers[parseInt(args[1])];
+        if (typeof val === "string") {
+          return val.trim();
+        } else if (typeof val === "number") {
+             // likely offset, return as string? 
+             // Or maybe we shouldn't allow $OFFSET unless asked?
+             // Usually $0-$N are captures. Offset is N+1.
+             return String(val);
         } else {
           return "";
         }
