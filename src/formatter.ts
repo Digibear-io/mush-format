@@ -6,6 +6,7 @@ import pipeline, { Middleware, Next, Pipe } from "./middleware";
 import defines from "./jobs/@define";
 import testGen from "./jobs/test-gen";
 import docParser from "./jobs/doc-parser";
+import linter from "./jobs/linter";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -57,7 +58,7 @@ export class Formatter {
     // install the middleware
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(testGen, docParser, defines, render);
-    this.stack.get("compress")?.use(compress);
+    this.stack.get("compress")?.use(linter, compress);
     this.stack.get("post")?.use(post);
   }
 

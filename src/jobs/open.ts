@@ -14,6 +14,25 @@ export default async (ctx: Context, next: Next) => {
     visitedFiles: Set<string> = visited
   ): Promise<Line[]> => {
     
+    // Check for Standard Library Import
+    if (filePath.startsWith("std/")) {
+        const relativePath = filePath.substring(4);
+        const libPath = join(__dirname, "../stdlib", relativePath);
+
+        if (visitedFiles.has(libPath)) {
+            throw new Error(`Circular dependency detected: ${libPath}`);
+        }
+        
+        if (existsSync(libPath)) {
+            visitedFiles.add(libPath);
+            ctx.scratch.base = dirname(libPath);
+            const text = await readFile(libPath, "utf8");
+            return await scan(text, libPath, visitedFiles);
+        } else {
+            throw new Error(`Standard Library file not found: ${filePath}`);
+        }
+    }
+    
     if (validURL.isUri(filePath)) {
       if (visitedFiles.has(filePath)) {
         throw new Error(`Circular dependency detected: ${filePath}`);
