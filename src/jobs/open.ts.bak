@@ -5,7 +5,6 @@ import { dirname, join, isAbsolute } from "path";
 import validURL from "valid-url";
 
 import { Context, Next, Line } from "../formatter";
-import { applyNamespace } from "../utils/namespace";
 
 export default async (ctx: Context, next: Next) => {
   const visited = new Set<string>();
@@ -142,36 +141,6 @@ export default async (ctx: Context, next: Next) => {
                  if (oldBase) ctx.scratch.base = oldBase;
             }
             continue;
-        }
-
-        // Handle #import
-        const importMatch = lineText.match(/#import\s+"(.*?)"\s+as\s+(\w+)/i);
-        if (importMatch) {
-             const importedFile = importMatch[1];
-             const alias = importMatch[2];
-             
-             const oldBase = ctx.scratch.base;
-             try {
-                // Determine base - same logic as include
-                let includeBase = ctx.scratch.base;
-                if (validURL.isUri(currentFile)) {
-                    includeBase = dirname(currentFile);
-                } else if (isAbsolute(currentFile)) {
-                    includeBase = dirname(currentFile);
-                }
-                
-                if (includeBase) ctx.scratch.base = includeBase;
-
-                const loadedLines = await loadFile(importedFile, visitedFiles);
-                
-                // TRANSFORM
-                const transformedLines = applyNamespace(loadedLines, alias);
-                output.push(...transformedLines);
-                
-             } finally {
-                 if (oldBase) ctx.scratch.base = oldBase;
-             }
-             continue;
         }
 
         output.push({
