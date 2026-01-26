@@ -16,7 +16,7 @@
     "mushformatter.jpg"
   ],
   "bin": {
-    "mform": "./bin/mform.js"
+    "mform": "./dist/bin/mform.js"
   },
   "author": "Lemuel L. Canady, Jr",
   "license": "MIT",

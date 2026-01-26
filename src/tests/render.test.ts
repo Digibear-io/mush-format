@@ -27,6 +27,14 @@ test("Headers and footers render in the file.", async () => {
   expect(data).toContain("@@ footer: footer");
 });
 
+test("Headers use non-greedy matching for the name", async () => {
+  const { data } = await formatter.format("#header name = value = other\n");
+  // If greedy, args[1] would be "name = value ". 
+  // If non-greedy, args[1] should be "name".
+  // Note: the formatter appends "@@ name: value = other" to the output (based on current implementation)
+  expect(data).toContain("@@ name: value = other");
+});
+
 test("#include pulls in a github archive", async () => {
   expect(
     (

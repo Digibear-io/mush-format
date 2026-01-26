@@ -16,9 +16,7 @@ export default (ctx: Context, next: Next) => {
   // look for object &attribute entries. If installer is true, add a test.
   ctx.output = ctx.output.replace(/&(.*)\s+?(.*)/gi, (...args: string[]) => {
     if (ctx.installer) {
-      if (/.*:.*/.test(args[1])) {
-        const [dbref, action] = args[1].split(":");
-      }
+
 
       return (
         `${args[0]}\n` +

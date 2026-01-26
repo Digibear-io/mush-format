@@ -4,6 +4,8 @@ import compress from "./jobs/compress";
 import post from "./jobs/post";
 import pipeline, { Middleware, Next, Pipe } from "./middleware";
 import defines from "./jobs/@define";
+import testGen from "./jobs/test-gen";
+import docParser from "./jobs/doc-parser";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -17,10 +19,17 @@ export interface Header {
   value: string;
 }
 
+export interface Line {
+  text: string;
+  file: string;
+  line: number;
+}
+
 export interface Context {
   input: string;
   path: string;
-  scratch: { [k: string]: any; current?: string };
+  filename?: string;
+  scratch: { [k: string]: any; current?: Line[] | string }; // Allow string for compat during refactor, but aim for Line[]
   debug?: boolean;
   installer?: boolean;
   defines?: Map<RegExp, string>;
@@ -47,7 +56,7 @@ export class Formatter {
 
     // install the middleware
     this.stack.get("open")?.use(open);
-    this.stack.get("render")?.use(defines, render);
+    this.stack.get("render")?.use(testGen, docParser, defines, render);
     this.stack.get("compress")?.use(compress);
     this.stack.get("post")?.use(post);
   }
@@ -58,11 +67,12 @@ export class Formatter {
    * @param layer The job to be added
    */
 
-  async format(text: string, path = "") {
+  async format(text: string, path = "", filename?: string) {
     const ctx: Context = {
       cache: new Map(),
       input: text,
       path,
+      filename,
       output: "",
       combined: "",
       defines: new Map(),
