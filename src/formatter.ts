@@ -62,7 +62,7 @@ export class Formatter {
 
     // install the middleware
     this.stack.get("open")?.use(open);
-    this.stack.get("render")?.use(agent, resolve, template, testGen, docParser, defines, render);
+    this.stack.get("render")?.use(resolve, template, testGen, docParser, defines, render);
     this.stack.get("compress")?.use(/* linter, */ compress);
     this.stack.get("post")?.use(install, post);
   }
