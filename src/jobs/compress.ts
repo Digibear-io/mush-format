@@ -57,6 +57,9 @@ function stripComments(lines: Line[]): Line[] {
   let inBlockComment = false;
 
   for (const line of lines) {
+    if (line.text.startsWith("##")) {
+      continue;
+    }
     if (line.text.startsWith("@@")) {
       output.push(line);
       continue;
@@ -109,7 +112,16 @@ function stripComments(lines: Line[]): Line[] {
       if (text.substr(i, 2) === "//") {
         break; // Ignore rest of line
       }
+      
+      // Look out for */* which is a common MUSH pattern for switches.
+      // We only start a block comment if it's NOT preceded by a *.
       if (text.substr(i, 2) === "/*") {
+        if (i > 0 && text[i - 1] === "*") {
+           // It's */* - treat as normal text
+           newText += "/*";
+           i += 2;
+           continue;
+        }
         inBlockComment = true;
         i += 2;
         continue;

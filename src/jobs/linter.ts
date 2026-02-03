@@ -107,8 +107,13 @@ export default async (ctx: Context, next: Next) => {
       }
 
       // Comment handling
-      if (text.substr(i, 2) === "//") break; // Skip rest of line
+      if (text.substr(i, 2) === "//" || text.substr(i, 2) === "##") break; // Skip rest of line
       if (text.substr(i, 2) === "/*") {
+        if (i > 0 && text[i - 1] === "*") {
+           // It's */* - treat as normal text
+           i += 2;
+           continue;
+        }
         inBlockComment = true;
         i += 2;
         continue;
