@@ -1,17 +1,29 @@
 import { FormatterState } from '../graph';
-import { Formatter, Line } from '../../formatter';
+import { Line, Header } from '../../formatter';
+import pipeline, { Pipe } from '../../middleware';
+import open from '../../jobs/open';
+import resolve from '../../jobs/resolve';
+import template from '../../jobs/template';
+import testGen from '../../jobs/test-gen';
+import docParser from '../../jobs/doc-parser';
+import defines from '../../jobs/@define';
+import render from '../../jobs/render';
+import format from '../../jobs/format';
 import * as fs from 'fs';
 import * as path from 'path';
 
 /**
  * Intelligent Parser Node.
  * Reuses the existing Formatter logic but adapts it for the Agentic Flow.
+ * It avoids calling the agentic job recursively.
  */
 export async function smartParserNode(state: FormatterState): Promise<Partial<FormatterState>> {
   console.log("--- Agentic Parsing Start ---");
 
-  const formatter = new Formatter();
-  
+  // Create a customized stack that does NOT include the agentic job
+  const renderStack = pipeline<any>();
+  renderStack.use(resolve, template, testGen, docParser, defines, render, format);
+
   // If we have an entry point, we use it. Otherwise we process all discovered files.
   const target = state.entryPoint || state.projectRoot;
   
@@ -41,7 +53,26 @@ export async function smartParserNode(state: FormatterState): Promise<Partial<Fo
       throw new Error(`Target not found: ${target}`);
   }
   
-  const output = await formatter.format(inputContent, path.dirname(target), path.basename(target));
+  const ctx: any = {
+    cache: new Map(),
+    input: inputContent,
+    path: path.dirname(target),
+    filename: path.basename(target),
+    output: "",
+    combined: "",
+    defines: new Map(),
+    scratch: {},
+    headers: [],
+    footers: [],
+  };
+
+  await open(ctx, async () => {});
+  await renderStack.execute(ctx);
+
+  const output = {
+    data: ctx.output.trim(),
+    combined: ctx.combined.trim(),
+  };
   
   // Extract the formatted lines from the context
   // The formatter puts the result in ctx.scratch.current as Line[]
@@ -51,7 +82,7 @@ export async function smartParserNode(state: FormatterState): Promise<Partial<Fo
   // We could parse the output back into lines, OR we modify the formatter to return it.
   // For now, let's create Line objects from the output.
   
-  const lines: Line[] = output.data.split('\n').map((text, idx) => ({
+  const lines: Line[] = output.data.split('\n').map((text: string, idx: number) => ({
       text,
       file: target,
       line: idx + 1

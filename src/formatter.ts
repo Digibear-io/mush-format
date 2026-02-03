@@ -10,6 +10,7 @@ import linter from "./jobs/linter";
 import resolve from "./jobs/resolve";
 import template from "./jobs/template";
 import install from "./jobs/install";
+import agent from "./jobs/agent";
 
 export type Step = "pre" | "open" | "render" | "compress" | "post";
 export type Plugin = (
@@ -61,7 +62,7 @@ export class Formatter {
 
     // install the middleware
     this.stack.get("open")?.use(open);
-    this.stack.get("render")?.use(resolve, template, testGen, docParser, defines, render);
+    this.stack.get("render")?.use(agent, resolve, template, testGen, docParser, defines, render);
     this.stack.get("compress")?.use(/* linter, */ compress);
     this.stack.get("post")?.use(install, post);
   }
