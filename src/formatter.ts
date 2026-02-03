@@ -12,7 +12,7 @@ import template from "./jobs/template";
 import install from "./jobs/install";
 import agent from "./jobs/agent";
 
-export type Step = "pre" | "open" | "render" | "compress" | "post";
+export type Step = "pre" | "open" | "render" | "compress" | "lint" | "post";
 export type Plugin = (
   step: Step,
   context: Context,
@@ -57,13 +57,14 @@ export class Formatter {
     this.stack.set("open", pipeline<Context>());
     this.stack.set("render", pipeline<Context>());
     this.stack.set("compress", pipeline<Context>());
+    this.stack.set("lint", pipeline<Context>());
     this.stack.set("post", pipeline<Context>());
     this.plugins = [];
 
     // install the middleware
     this.stack.get("open")?.use(open);
-    this.stack.get("render")?.use(resolve, template, testGen, docParser, defines, render);
-    this.stack.get("compress")?.use(/* linter, */ compress);
+    this.stack.get("render")?.use(agent, resolve, template, testGen, docParser, defines, render);
+    this.stack.get("lint")?.use(linter);
     this.stack.get("post")?.use(install, post);
   }
 
@@ -96,6 +97,7 @@ export class Formatter {
       await this.stack.get("open")?.execute(ctx);
       await this.stack.get("render")?.execute(ctx);
       await this.stack.get("compress")?.execute(ctx);
+      await this.stack.get("lint")?.execute(ctx);
       await this.stack.get("post")?.execute(ctx);
     } catch (error) {
       ctx.output += "\nError: Unable to process requested file.\n" + error;

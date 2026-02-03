@@ -65,10 +65,13 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
         }
         
         if (balance !== 0) {
-            errors.push({ line: lineObj.line, message: "Unbalanced brackets []", text: lineObj.text });
+            errors.push({ line: lineObj.line, message: "COMPLEX: Unbalanced brackets []", text: lineObj.text, complex: true });
         }
         if (pBalance !== 0) {
-            errors.push({ line: lineObj.line, message: "Unbalanced parentheses ()", text: lineObj.text });
+            errors.push({ line: lineObj.line, message: "COMPLEX: Unbalanced parentheses ()", text: lineObj.text, complex: true });
+        }
+        if (inQuote) {
+            errors.push({ line: lineObj.line, message: "Unterminated string", text: lineObj.text });
         }
     }
     
@@ -106,30 +109,11 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
             let text = l.text;
             let modified = false;
             
-            // Count unbalanced brackets and parentheses
-            let bracketBalance = 0;
-            let parenBalance = 0;
-            
-            for(const char of text) {
-                if(char === '[') bracketBalance++;
-                if(char === ']') bracketBalance--;
-                if(char === '(') parenBalance++;
-                if(char === ')') parenBalance--;
-            }
-            
-            // Heal by appending closures in proper order
-            if (parenBalance > 0) {
-                text += ")".repeat(parenBalance);
+            if (lineSimpleErrors.some(e => e.message === "Unterminated string")) {
+                text += '"';
                 healedCount++;
                 modified = true;
-                console.log(`[Heuristic] Line ${l.line}: Appended ${parenBalance} missing ')'`);
-            }
-            
-            if (bracketBalance > 0) {
-                text += "]".repeat(bracketBalance);
-                healedCount++;
-                modified = true;
-                console.log(`[Heuristic] Line ${l.line}: Appended ${bracketBalance} missing ']'`);
+                console.log(`[Heuristic] Line ${l.line}: Appended missing '"'`);
             }
             
             if (modified) {

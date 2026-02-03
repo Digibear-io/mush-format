@@ -1,56 +1,57 @@
-import { Context, Next, Line } from "../formatter";
-import { replaceDefines } from "../utils/replaceDefines";
-import { writeFile } from "fs/promises";
 
-export default async (ctx: Context, next: Next) => {
-  if (!Array.isArray(ctx.scratch.current)) return next();
-  let lines = ctx.scratch.current as Line[];
+import { FormatterState } from '../graph';
+import { Context, Line } from "../../formatter";
+import { replaceDefines } from "../../utils/replaceDefines";
+
+export async function compressorNode(state: FormatterState): Promise<Partial<FormatterState>> {
+  console.log("--- Compressor Start ---");
+
+  let lines = state.formattedLines || [];
 
   // 1. Strip comments (stateful Line processing)
   lines = stripComments(lines);
 
   // 2. Join indented lines
-  lines = joinLines(lines);
+  lines = joinLinesLogic(lines);
 
   // 3. Replace defines
+  const dummyContext: Context = {
+    path: state.projectRoot,
+    filename: state.entryPoint,
+    defines: new Map<RegExp, string>(),
+    scratch: {},
+    output: "",
+    input: "",
+    headers: [],
+    footers: [],
+    combined: "",
+    cache: new Map<string, any>()
+  };
+  
   lines = lines.map((l) => ({
     ...l,
-    text: replaceDefines(ctx, l.text),
+    text: replaceDefines(dummyContext, l.text),
   }));
 
   // 4. Split and Process & Generate Map
   const processedLines: Line[] = [];
-  const sourceMap: string[] = [];
-
+  
   for (const line of lines) {
     if (!line.text.trim()) {
       processedLines.push(line);
       continue;
     }
 
-    // Detect attribute for mapping
-    const match = line.text.match(/^((?:@wait\s+\S+=)?&(\S+)\s+(\S+)=)/i);
-    if (match) {
-      const attr = match[2];
-      const obj = match[3];
-      sourceMap.push(`${obj}/${attr} -> ${line.file}:${line.line}`);
-    }
-
     processedLines.push(...processCommand(line));
   }
+  
+  console.log("--- Compressor End ---");
 
-  ctx.scratch.current = processedLines;
-  ctx.output = processedLines.map((l) => l.text).join("\n");
+  return {
+    formattedLines: processedLines,
+  };
+}
 
-  // Output Source Map
-  if (sourceMap.length > 0) {
-    console.log("\n--- Source Map ---");
-    console.log(sourceMap.join("\n"));
-    console.log("------------------\n");
-  }
-
-  next();
-};
 
 function stripComments(lines: Line[]): Line[] {
   const text = lines.map((l) => l.text).join("\n");
@@ -104,58 +105,6 @@ function stripComments(lines: Line[]): Line[] {
     }
   }
   return output;
-}
-
-function joinLines(lines: Line[]): Line[] {
-  const output: Line[] = [];
-  if (lines.length === 0) return output;
-
-  let current = lines[0];
-
-  for (let i = 1; i < lines.length; i++) {
-    const next = lines[i];
-    if (next.text.startsWith("@@")) {
-      output.push(current);
-      output.push(next);
-      current = lines[i + 1]; // This logic is slightly flawed if @@ is last?
-      // Wait, if @@ is encountered, we push current.
-      // Next iteration we want to start fresh?
-      // Actually @@ lines are standalone markers usually.
-      // But we need to handle the loop index.
-      // If we pushed next, we should skip it.
-      // But my loop logic: current is waiting to see if next is indented.
-      // If next is @@, it is NOT indented (usually).
-      // So pushing current is correct. Pushing next is correct.
-      // Then current sets to i+1?? No.
-      // loop continues.
-      // current needs to be reset.
-      
-      // Let's fix loop:
-      // If next is @@: push current. push next. current = lines[i+1]?
-      // No, because loop increments i.
-      // We need to handle `current` being undefined if we skipped?
-      
-      // Better:
-      // Iterate. If indented, append to current.
-      // Else, push current, current = next.
-      continue; 
-    }
-     
-    // Correction for @@ logic:
-    // If next is @@, we break the join chain.
-    /*
-        if (next.text.startsWith('@@')) {
-            output.push(current);
-            output.push(next);
-            // We need a new current.
-            // But we are in a loop.
-            // If i is last, we are done?
-            // This is messy.
-    */
-    // Revert to simpler map logic if possible? No, strict reduction needed.
-  }
-  // Re-implementation of joinLines below for clarity
-  return joinLinesLogic(lines); 
 }
 
 function joinLinesLogic(lines: Line[]): Line[] {
@@ -227,7 +176,7 @@ function processCommand(line: Line): Line[] {
   if (cmd.length <= SAFE_LIMIT) return [line];
 
   // Check for &ATTR OBJ=VAL
-  const match = cmd.match(/^((?:@wait\s+\S+=)?&(\S+)\s+(\S+)=)(.*)$/s);
+  const match = cmd.match(/^((?:@@wait\s+\S+=)?&(\S+)\s+(\S+)=)(.*)$/s);
 
   if (!match) return [line];
 

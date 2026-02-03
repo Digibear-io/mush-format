@@ -83,6 +83,23 @@ export async function projectAnalyzerNode(state: FormatterState): Promise<Partia
 
   console.log(`Determined Entry Point: ${entryPoint}`);
 
+  // Load .env.local if it exists
+  const envPath = path.join(state.projectRoot, '.env.local');
+  if (fs.existsSync(envPath)) {
+    console.log("Found .env.local, loading environment variables.");
+    const envFile = fs.readFileSync(envPath, 'utf8');
+    envFile.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        const value = valueParts.join('=').trim();
+        if (key) {
+          process.env[key.trim()] = value;
+        }
+      }
+    });
+  }
+
   return {
     files: sourceFiles,
     entryPoint: entryPoint,

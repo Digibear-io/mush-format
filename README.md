@@ -17,6 +17,9 @@ Write code like a developer, not a text compressor.
 
 - **🤖 Agentic Processing** (Default): Autonomous project analysis, intelligent
   parsing, self-healing linting, and automatic error correction.
+- **Advanced Self-Healing**: The agent uses a combination of heuristics and an LLM to fix broken code. It can handle simple errors like unterminated strings, as well as complex issues like unbalanced brackets and parentheses.
+- **LLM-Powered Healing**: For complex errors, the agent can leverage a Large Language Model (LLM) to understand the code's intent and propose more sophisticated fixes.
+- **Environment Configuration**: The agent can be configured using a `.env.local` file to set environment variables, such as the `GOOGLE_API_KEY` required for LLM-based healing.
 - **Modern Syntax**: Write clean, indented code with comments.
 - **Project Management**: Initialize, build, and manage dependencies with the
   CLI.
@@ -27,8 +30,6 @@ Write code like a developer, not a text compressor.
 - **Dependency Management**: Install packages directly from GitHub.
 - **Testing**: Built-in unit testing framework with `@test`.
 - **Documentation**: Auto-generate help files from `/** ... */` comments.
-- **Self-Healing Linting**: Automatically detects and fixes unbalanced brackets
-  and parentheses.
 
 ---
 

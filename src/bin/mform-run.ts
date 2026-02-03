@@ -171,6 +171,8 @@ import * as fs_sync from "fs";
           console.log("[MFORM]: Running in Agentic Mode...");
           const projectRoot = resolve(args[0]);
           const result = await app.invoke({ projectRoot });
+          const data = result.formattedLines.map((line: any) => line.text).join("\n");
+          await handleOutput(data, [], options, args[0]);
           console.log("[MFORM]: Agentic Flow Complete.");
           console.log(`Verification Status: ${result.verificationStatus}`);
           return;

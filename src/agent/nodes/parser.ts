@@ -22,7 +22,7 @@ export async function smartParserNode(state: FormatterState): Promise<Partial<Fo
 
   // Create a customized stack that does NOT include the agentic job
   const renderStack = pipeline<any>();
-  renderStack.use(resolve, template, testGen, docParser, defines, render, format);
+  renderStack.use(resolve, template, testGen, docParser, defines, render);
 
   // If we have an entry point, we use it. Otherwise we process all discovered files.
   const target = state.entryPoint || state.projectRoot;

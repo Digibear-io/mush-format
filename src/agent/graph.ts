@@ -39,6 +39,7 @@ import { projectAnalyzerNode } from "./nodes/analyzer";
 import { smartParserNode } from "./nodes/parser";
 import { selfHealingLinterNode } from "./nodes/linter";
 import { verificationNode } from "./nodes/verifier";
+import { compressorNode } from "./nodes/compressor";
 
 // Conditional Edge Logic
 function shouldHeal(state: FormatterState): "linter" | "verifier" | typeof END {
@@ -60,11 +61,13 @@ function shouldHeal(state: FormatterState): "linter" | "verifier" | typeof END {
 const workflow = new StateGraph(FormatterStateAnnotation)
   .addNode("analyzer", projectAnalyzerNode)
   .addNode("parser", smartParserNode)
+  .addNode("compressor", compressorNode)
   .addNode("linter", selfHealingLinterNode)
   .addNode("verifier", verificationNode)
   .addEdge(START, "analyzer")
   .addEdge("analyzer", "parser")
-  .addEdge("parser", "linter")
+  .addEdge("parser", "compressor")
+  .addEdge("compressor", "linter")
   .addConditionalEdges("linter", shouldHeal)
   .addEdge("verifier", END);
 
