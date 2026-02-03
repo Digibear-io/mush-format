@@ -14,10 +14,45 @@ program
   .option(
     "-d --diff",
     "Only print the differences from the previous output file."
-  );
+  )
+  .option("--agent", "Run in agentic mode using LangGraph.")
+  .option("--gemini-api-key <key>", "Set the Gemini API Key and store it locally.");
 
 program.parse(process.argv);
 const args = program.args;
+
+import * as dotenv from "dotenv";
+import * as os from "os";
+
+const GLOBAL_CONFIG_DIR = resolve(os.homedir(), ".mform");
+const GLOBAL_ENV_PATH = resolve(GLOBAL_CONFIG_DIR, ".env");
+const LOCAL_ENV_PATH = resolve(process.cwd(), ".env.local");
+
+// Load local first (override), then global
+dotenv.config({ path: LOCAL_ENV_PATH });
+dotenv.config({ path: GLOBAL_ENV_PATH });
+
+import { app } from "../agent/graph";
+
+async function saveApiKey(key: string) {
+  try {
+    if (!fs_sync.existsSync(GLOBAL_CONFIG_DIR)) {
+      await mkdir(GLOBAL_CONFIG_DIR, { recursive: true });
+    }
+  } catch (e) {}
+
+  let content = "";
+  try {
+    content = await readFile(GLOBAL_ENV_PATH, { encoding: "utf-8" });
+  } catch (e) {
+    // File doesn't exist, ignore
+  }
+
+  const lines = content.split("\n").filter(line => !line.startsWith("ANTHROPIC_API_KEY="));
+  lines.push(`ANTHROPIC_API_KEY=${key}`);
+  await writeFile(GLOBAL_ENV_PATH, lines.join("\n").trim() + "\n");
+  console.log(`[MFORM]: API Key saved globally to ${GLOBAL_ENV_PATH}`);
+}
 
 async function ensureDirectoryExistence(filePath: string) {
   const name = dirname(filePath);
@@ -115,16 +150,39 @@ async function parseDir() {
     await handleOutput(data, output, options, args[0]);
 }
 
+import * as fs_sync from "fs";
+
 (async () => {
     try {
-        if (!args[0]) throw new Error("No input file");
+        const options = program.opts();
+
+        if (options.geminiApiKey) {
+          await saveApiKey(options.geminiApiKey);
+          // Reload global env
+          dotenv.config({ path: GLOBAL_ENV_PATH, override: true });
+        }
+
+        if (!args[0]) {
+          if (options.geminiApiKey) return;
+          throw new Error("No input file");
+        }
+
+        if (options.agent) {
+          console.log("[MFORM]: Running in Agentic Mode...");
+          const projectRoot = resolve(args[0]);
+          const result = await app.invoke({ projectRoot });
+          console.log("[MFORM]: Agentic Flow Complete.");
+          console.log(`Verification Status: ${result.verificationStatus}`);
+          return;
+        }
+
         const dirent = await stat(resolve(args[0]));
         if (dirent.isFile()) {
             await parseFile();
         } else if (dirent.isDirectory()) {
             await parseDir();
         }
-    } catch {
+    } catch (e) {
         if (args[0]) {
              const { data } = await formatter.format(args[0]);
              console.log(data);

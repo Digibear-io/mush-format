@@ -6,3 +6,5 @@ yarn-error.log
 src/test.ts
 package-lock.json
 .tmp
+.env.local
+.env

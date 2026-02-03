@@ -15,6 +15,8 @@ Write code like a developer, not a text compressor.
 
 ## 🚀 Key Features
 
+- **🤖 Agentic Processing** (Default): Autonomous project analysis, intelligent
+  parsing, self-healing linting, and automatic error correction.
 - **Modern Syntax**: Write clean, indented code with comments.
 - **Project Management**: Initialize, build, and manage dependencies with the
   CLI.
@@ -25,7 +27,8 @@ Write code like a developer, not a text compressor.
 - **Dependency Management**: Install packages directly from GitHub.
 - **Testing**: Built-in unit testing framework with `@test`.
 - **Documentation**: Auto-generate help files from `/** ... */` comments.
-- **Linting**: Catch security issues and unbalanced brackets before you deploy.
+- **Self-Healing Linting**: Automatically detects and fixes unbalanced brackets
+  and parentheses.
 
 ---
 

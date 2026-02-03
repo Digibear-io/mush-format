@@ -5,11 +5,46 @@ import { stat, writeFile, readFile, mkdir } from "fs/promises";
 import { watch } from "fs";
 import { resolve, dirname, join } from "path";
 import { formatter } from "../formatter";
+import * as dotenv from "dotenv";
+import * as os from "os";
 // import YAML from "yaml";
 // @ts-ignore
 import LineDiff from "line-diff";
 
 const conf = require("../../package.json");
+
+// Global config paths
+const GLOBAL_CONFIG_DIR = resolve(os.homedir(), ".mform");
+const GLOBAL_ENV_PATH = resolve(GLOBAL_CONFIG_DIR, ".env");
+
+// Load environment variables - .env.local takes precedence
+dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: GLOBAL_ENV_PATH }); // Load global .env
+
+/**
+ * Save API key to global .env file
+ */
+async function saveApiKey(key: string) {
+  const fs_sync = require("fs");
+  
+  try {
+    if (!fs_sync.existsSync(GLOBAL_CONFIG_DIR)) {
+      await mkdir(GLOBAL_CONFIG_DIR, { recursive: true });
+    }
+  } catch (e) {}
+
+  let content = "";
+  try {
+    content = await readFile(GLOBAL_ENV_PATH, { encoding: "utf-8" });
+  } catch (e) {
+    // File doesn't exist, ignore
+  }
+
+  const lines = content.split("\n").filter(line => !line.startsWith("GOOGLE_API_KEY="));
+  lines.push(`GOOGLE_API_KEY=${key}`);
+  await writeFile(GLOBAL_ENV_PATH, lines.join("\n").trim() + "\n");
+  console.log(`[MFORM]: API Key saved globally to ${GLOBAL_ENV_PATH}`);
+}
 
 program
   .version(conf.version)
@@ -174,16 +209,63 @@ async function executeRun(inputPath: string, options: any) {
 
 program
   .command("run <path>")
-  .description("run a Project or file.")
+  .description("run a Project or file in agentic mode (auto-analyze, parse, lint, heal).")
   .option("-o --output <file>", "The file to save the output too.")
   .option(
     "-d --diff",
     "Only print the differences from the previous output file."
   )
   .option("-i --install-script", "Compile output as an Installer Script")
-  .option("-w --watch", "Watch mode") // Added watch flag
+  .option("-w --watch", "Watch mode")
+  .option("--no-agent", "Disable agentic mode and use classic formatter")
+  .option("--google-api-key <key>", "Google API key for LLM healing (alternative to .env.local)")
   .action(async (path, options) => {
-    // Initial Run
+    // Save API key globally if provided via flag
+    if (options.googleApiKey) {
+      await saveApiKey(options.googleApiKey);
+      // Reload global env to pick up the saved key
+      dotenv.config({ path: GLOBAL_ENV_PATH, override: true });
+      process.env.GOOGLE_API_KEY = options.googleApiKey;
+    }
+    
+    // Use agentic mode by default unless explicitly disabled
+    if (options.agent !== false) {
+      console.log("[MFORM]: Running in Agentic Mode...");
+      
+      // Check for API key upfront
+      if (!process.env.GOOGLE_API_KEY) {
+        console.warn("\n⚠️  WARNING: GOOGLE_API_KEY not set!");
+        console.warn("   Complex errors will be detected but NOT auto-healed.");
+        console.warn("   To enable LLM-powered healing, either:");
+        console.warn("   1. Create .env.local: GOOGLE_API_KEY=your_key");
+        console.warn("   2. Use flag: --google-api-key=your_key\n");
+      }
+      
+      const { app } = await import("../agent/graph");
+      const projectRoot = resolve(path);
+      const result = await app.invoke({ projectRoot });
+      console.log("[MFORM]: Agentic Flow Complete.");
+      console.log(`Verification Status: ${result.verificationStatus}`);
+      
+      // Output the healed/formatted code
+      if (result.formattedLines && result.formattedLines.length > 0) {
+        const output = result.formattedLines.map((l: any) => l.text).join('\n');
+        
+        if (options.output) {
+          await writeFile(options.output, output);
+          console.log(`[MFORM]: Output saved to ${options.output}`);
+        } else {
+          console.log("\n--- Formatted Output ---");
+          console.log(output);
+          console.log("---");
+          console.log("\n[MFORM]: Tip: Use -o <file> to save output to a file");
+        }
+      }
+      
+      return;
+    }
+
+    // Classic mode (only if --no-agent is specified)
     await executeRun(path, options);
 
     if (options.watch) {
