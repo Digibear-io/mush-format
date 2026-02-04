@@ -107,7 +107,7 @@ export class MUXKnowledgeBase {
     async index(): Promise<void> {
         if (this.indexed) return;
         
-        console.log('[KB] Indexing MUX documentation...');
+        // Silence indexing logs to keep UI clean
         
         const helpFiles = ['help.txt', 'wizhelp.txt', 'plushelp.txt', 'staffhelp.txt'];
         
@@ -116,12 +116,10 @@ export class MUXKnowledgeBase {
             if (fs.existsSync(filepath)) {
                 const entries = this.parseHelpFile(filepath);
                 this.entries.push(...entries);
-                console.log(`[KB] Indexed ${entries.length} entries from ${file}`);
             }
         }
         
         this.indexed = true;
-        console.log(`[KB] Total entries: ${this.entries.length}`);
     }
 
     /**

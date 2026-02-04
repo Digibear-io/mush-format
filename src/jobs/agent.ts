@@ -8,12 +8,20 @@ import * as fs from "fs";
  * Integrates the LangGraph-based agentic system into the formatter pipeline.
  */
 export default async (ctx: Context, next: Next) => {
-  // If we don't have an input path, we can't use the agent easily as it expects files.
-  // However, we can create a temporary file or adapt the nodes.
-  // For now, let's assume we have a path or we create a virtual entry.
-  
-  const projectRoot = ctx.path || process.cwd();
-  const entryPoint = ctx.filename ? path.join(ctx.path, ctx.filename) : undefined;
+  // If we don't have an input path or filename, we skip agentic project analysis.
+  // This typically happens when formatting raw string inputs (like in unit tests).
+  if (!ctx.path && !ctx.filename) {
+    return next();
+  }
+
+  // Allow explicit disabling of agent mode via context
+  if ((ctx as any).agent === false) {
+    return next();
+  }
+
+  // Resolve relative paths based on the context's path
+  const projectRoot = ctx.path ? path.resolve(process.cwd(), ctx.path) : process.cwd();
+  const entryPoint = (ctx.path && ctx.filename) ? path.resolve(process.cwd(), ctx.path, ctx.filename) : undefined;
 
   console.log(`[AgentJob] Starting agentic formatting for ${entryPoint || projectRoot}`);
 
@@ -30,8 +38,12 @@ export default async (ctx: Context, next: Next) => {
       ctx.scratch.current = result.formattedLines;
       ctx.output = result.formattedLines.map((l: Line) => l.text).join("\n");
       
-      // Update combined output if needed
-      if (ctx.combined !== undefined) {
+      // Determine the file or directory name to check against ignore list
+      // If entryPoint is defined, use its basename. Otherwise, use ctx.path's basename.
+      // If neither, default to an empty string to avoid errors.
+      const fileToCheck = entryPoint ? path.basename(entryPoint) : (ctx.path ? path.basename(ctx.path) : '');
+
+      if (fileToCheck !== 'node_modules' && fileToCheck !== '.git' && fileToCheck !== '.tmp' && fileToCheck !== 'dist' && fileToCheck !== '.agent' && fileToCheck !== 'mocks' && !fileToCheck.startsWith('.')) {
           ctx.combined = ctx.output;
       }
       

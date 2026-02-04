@@ -66,6 +66,7 @@ export default async (ctx: Context, next: Next) => {
       ...line,
       text: replaceDefines(ctx, line.text)
   }));
+  ctx.output = (ctx.scratch.current as Line[]).map(l => l.text).join("\n");
 
   next();
 };

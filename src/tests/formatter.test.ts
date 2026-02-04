@@ -9,7 +9,7 @@ test("Return a string.", async () => {
 
 test("format a file from a subdirectory.", async () => {
   expect(
-    (await formatter.format("./tests/mocks/code.mu", join(__dirname, "../")))
+    (await formatter.format("./tests/mocks/code.mu", join(__dirname, "../"), undefined, { agent: false, compress: true }))
       .data
   ).toMatch("&cmd.foo #dbref = $+foo *:@pemit %#= Foo %0;");
 });

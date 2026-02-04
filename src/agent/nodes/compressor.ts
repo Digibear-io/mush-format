@@ -1,12 +1,11 @@
-
 import { FormatterState } from '../graph';
 import { Context, Line } from "../../formatter";
 import { replaceDefines } from "../../utils/replaceDefines";
 
 export async function compressorNode(state: FormatterState): Promise<Partial<FormatterState>> {
-  console.log("--- Compressor Start ---");
 
   let lines = state.formattedLines || [];
+  if (lines.length === 0) return { formattedLines: [] };
 
   // 1. Strip comments (stateful Line processing)
   lines = stripComments(lines);
@@ -45,8 +44,6 @@ export async function compressorNode(state: FormatterState): Promise<Partial<For
     processedLines.push(...processCommand(line));
   }
   
-  console.log("--- Compressor End ---");
-
   return {
     formattedLines: processedLines,
   };
@@ -83,10 +80,17 @@ function stripComments(lines: Line[]): Line[] {
         inBlockComment = true;
         i++;
       } else if (text.substr(i, 2) === "//") {
-        while (i < text.length && text[i] !== "\n") {
-          i++;
+        // Lookahead/behind for URL check
+        const prev = i > 0 ? text[i-1] : "";
+        if (prev === ':') {
+             newText += "//";
+             i++;
+        } else {
+            while (i < text.length && text[i] !== "\n") {
+              i++;
+            }
+            newText += "\n";
         }
-        newText += "\n";
       } else {
         newText += text[i];
       }
@@ -99,8 +103,8 @@ function stripComments(lines: Line[]): Line[] {
     if (newLines[i].trim()) {
       output.push({
         text: newLines[i],
-        file: lines[i]?.file || "unknown",
-        line: lines[i]?.line || i + 1,
+        file: lines[0]?.file || "unknown", // Use lines[0] as heuristic
+        line: i + 1,
       });
     }
   }
@@ -111,13 +115,13 @@ function joinLinesLogic(lines: Line[]): Line[] {
     const output: Line[] = [];
     if (lines.length === 0) return output;
 
-    let current: Line | null = lines[0];
+    let current: Line | null = null;
 
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = 0; i < lines.length; i++) {
         const next = lines[i];
         
         if (!current) {
-            current = next;
+            current = { ...next };
             continue;
         }
 
@@ -132,7 +136,7 @@ function joinLinesLogic(lines: Line[]): Line[] {
             current.text += next.text.trimStart();
         } else {
             output.push(current);
-            current = next;
+            current = { ...next };
         }
     }
     if (current) output.push(current);
@@ -176,7 +180,7 @@ function processCommand(line: Line): Line[] {
   if (cmd.length <= SAFE_LIMIT) return [line];
 
   // Check for &ATTR OBJ=VAL
-  const match = cmd.match(/^((?:@@wait\s+\S+=)?&(\S+)\s+(\S+)=)(.*)$/s);
+  const match = cmd.match(/^((?:@wait\s+\S+=)?&(\S+)\s+(\S+)=)(.*)$/s);
 
   if (!match) return [line];
 
@@ -193,7 +197,7 @@ function processCommand(line: Line): Line[] {
   
   const nextCmdText = `@wait 0=&${attr} ${obj}=[get(${obj}/${attr})]${remainder}`;
   // Recursive call
-  const lNext = { ...line, text: nextCmdText }; // Inherit source info
+  const lNext = { ...line, text: nextCmdText }; 
   
   return [l1, ...processCommand(lNext)];
 }

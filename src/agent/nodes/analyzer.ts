@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { FormatterState } from '../graph';
+import { loadConfig } from '../../config';
+import { globSync } from 'glob';
+import { log, fmt } from '../../utils/colors';
 
 /**
  * Recursively list all files in a directory.
@@ -10,7 +13,7 @@ function walkDir(dir: string, fileList: string[] = []): string[] {
   for (const file of files) {
     const filePath = path.join(dir, file);
     if (fs.statSync(filePath).isDirectory()) {
-      if (file !== 'node_modules' && file !== '.git' && file !== '.tmp' && file !== 'dist') {
+      if (file !== 'node_modules' && file !== '.git' && file !== '.tmp' && file !== 'dist' && file !== '.agent' && !file.startsWith('.')) {
         walkDir(filePath, fileList);
       }
     } else {
@@ -25,10 +28,20 @@ function walkDir(dir: string, fileList: string[] = []): string[] {
  * List files and eventually use an LLM to decide which ones are source code.
  */
 export async function projectAnalyzerNode(state: FormatterState): Promise<Partial<FormatterState>> {
-  console.log(`--- Analyzing Project at: ${state.projectRoot} ---`);
+  log.section(`Analyzing Project: ${fmt.path(state.projectRoot)}`);
   
   if (!state.projectRoot) {
     throw new Error("projectRoot is required in state.");
+  }
+
+  // Load Mycelium/MForm config
+  const loaded = await loadConfig(undefined, state.projectRoot);
+  const config = loaded?.config;
+
+  log.detail(`Config loaded from: ${loaded?.configPath ? fmt.path(loaded.configPath) : fmt.dim('none')}`);
+  if (config) {
+      log.detail(`Config keys: ${fmt.key(Object.keys(config).join(', '))}`);
+      log.detail(`Config include: ${config.include ? fmt.number(config.include.length) : fmt.dim('undefined')}`);
   }
 
   // Check if it's a file or directory
@@ -36,40 +49,61 @@ export async function projectAnalyzerNode(state: FormatterState): Promise<Partia
   
   if (stats.isFile()) {
     // It's a single file - treat it as the entry point
-    console.log(`Single file detected: ${path.basename(state.projectRoot)}`);
+    log.info(`Single file detected: ${fmt.file(path.basename(state.projectRoot))}`);
     return {
-      files: [state.projectRoot],
-      entryPoint: state.projectRoot,
+      files: [path.resolve(state.projectRoot)],
+      entryPoint: path.resolve(state.projectRoot),
       iterationCount: 1
     };
   }
 
   // It's a directory - walk it
-  const allFiles = walkDir(state.projectRoot);
-  
-  // Basic heuristic: Include .txt and .mush files.
-  // In a full agentic version, we'd pass this list to an LLM.
-  const sourceFiles = allFiles.filter(f => 
-    f.endsWith('.txt') || f.endsWith('.mush') || f.endsWith('.mu')
-  );
+  let sourceFiles: string[] = [];
 
-  console.log(`Found ${sourceFiles.length} potential source files.`);
+  if (config?.include && Array.isArray(config.include)) {
+    console.log("Using include patterns from config.");
+    const patterns = config.include;
+    for (const pattern of patterns) {
+        const matches = globSync(pattern, { cwd: state.projectRoot, absolute: true, nodir: true });
+        sourceFiles.push(...matches);
+    }
+    // Remove duplicates preserving order
+    sourceFiles = [...new Set(sourceFiles)];
+  } else {
+    const allFiles = walkDir(state.projectRoot);
+    // Basic heuristic: Include .txt and .mush files.
+    // In a full agentic version, we'd pass this list to an LLM.
+    sourceFiles = allFiles.filter(f => 
+        f.endsWith('.txt') || f.endsWith('.mush') || f.endsWith('.mu')
+    );
+  }
+
+  log.step(`Found ${fmt.number(sourceFiles.length)} potential source files`);
 
   // Identifying entry point
   let entryPoint: string | undefined = state.entryPoint;
   
   if (!entryPoint) {
-      // Heuristic: check for mush.json first
-      const mushJsonPath = path.join(state.projectRoot, 'mush.json');
-      if (fs.existsSync(mushJsonPath)) {
-          try {
-              const config = JSON.parse(fs.readFileSync(mushJsonPath, 'utf8'));
-              if (config.main) {
-                  entryPoint = path.resolve(state.projectRoot, config.main);
-              }
-          } catch (e) {
-              console.warn("Failed to parse mush.json");
-          }
+      // Heuristic: check for mform.config first
+      if (config?.mform?.main) {
+          entryPoint = path.resolve(state.projectRoot, config.mform.main);
+      } else if ((config as any)?.main) {
+          entryPoint = path.resolve(state.projectRoot, (config as any).main);
+      }
+      
+      // Fallback: check for mush.json (legacy)
+      if (!entryPoint) {
+           const mushJsonPath = path.join(state.projectRoot, 'mush.json');
+           if (fs.existsSync(mushJsonPath)) {
+               try {
+                   const configJson = JSON.parse(fs.readFileSync(mushJsonPath, 'utf8'));
+                   if (configJson.main) {
+                       entryPoint = path.resolve(state.projectRoot, configJson.main);
+                   }
+               } catch (e) {
+                   console.warn("Failed to parse mush.json");
+               }
+           }
       }
   }
   
@@ -81,12 +115,17 @@ export async function projectAnalyzerNode(state: FormatterState): Promise<Partia
     });
   }
 
-  console.log(`Determined Entry Point: ${entryPoint}`);
+  // Final Fallback: first source file
+  if (!entryPoint && sourceFiles.length > 0) {
+    entryPoint = sourceFiles[0];
+  }
+
+  log.highlight(`Entry Point: ${fmt.file(path.basename(entryPoint!))} ${fmt.dim('(' + entryPoint + ')')}`);
 
   // Load .env.local if it exists
   const envPath = path.join(state.projectRoot, '.env.local');
   if (fs.existsSync(envPath)) {
-    console.log("Found .env.local, loading environment variables.");
+    log.detail('Found .env.local, loading environment variables.');
     const envFile = fs.readFileSync(envPath, 'utf8');
     envFile.split('\n').forEach(line => {
       const trimmedLine = line.trim();
@@ -102,7 +141,8 @@ export async function projectAnalyzerNode(state: FormatterState): Promise<Partia
 
   return {
     files: sourceFiles,
-    entryPoint: entryPoint,
-    iterationCount: 1
+    entryPoint: entryPoint!,
+    iterationCount: 1,
+    config: config
   };
 }

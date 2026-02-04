@@ -1,5 +1,7 @@
 import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { Line } from "../formatter";
+import { MyceliumConfig } from "../config";
+import { log, fmt } from "../utils/colors";
 
 /**
  * Define the state for the Agentic Formatter.
@@ -31,6 +33,10 @@ export const FormatterStateAnnotation = Annotation.Root({
     reducer: (left, right) => (left ?? 0) + (right ?? 0),
     default: () => 0,
   }),
+  config: Annotation<MyceliumConfig | undefined>({
+    reducer: (left, right) => right ?? left,
+    default: () => undefined,
+  }),
 });
 
 export type FormatterState = typeof FormatterStateAnnotation.State;
@@ -47,10 +53,10 @@ function shouldHeal(state: FormatterState): "linter" | "verifier" | typeof END {
   
   if (lintErrors && lintErrors.length > 0) {
     if (iterationCount < 3) {
-      console.log(`[Graph] Lint errors detected. Entering self-healing loop (Attempt ${iterationCount + 1}/3).`);
+      log.warning(`Lint errors detected. Entering self-healing loop (Attempt ${fmt.number(iterationCount + 1)}/3)`);
       return "linter"; // Loop back to linter (which includes healing logic)
     } else {
-      console.log("[Graph] Max healing attempts reached. Proceeding with errors.");
+      log.warning('Max healing attempts reached. Proceeding with errors.');
       return "verifier";
     }
   }

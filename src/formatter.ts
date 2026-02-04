@@ -12,6 +12,12 @@ import template from "./jobs/template";
 import install from "./jobs/install";
 import agent from "./jobs/agent";
 
+export interface MushFlavor {
+  name: string;
+  commands: string[];
+  functions: string[];
+}
+
 export type Step = "pre" | "open" | "render" | "compress" | "lint" | "post";
 export type Plugin = (
   step: Step,
@@ -44,6 +50,8 @@ export interface Context {
   output: string;
   combined: string;
   cache: Map<string, any>;
+  agent?: boolean;
+  compress?: boolean;
 }
 
 export class Formatter {
@@ -64,23 +72,26 @@ export class Formatter {
     // install the middleware
     this.stack.get("open")?.use(open);
     this.stack.get("render")?.use(agent, resolve, template, testGen, docParser, defines, render);
+    this.stack.get("compress")?.use(compress);
     this.stack.get("lint")?.use(linter);
     this.stack.get("post")?.use(install, post);
   }
 
   /**
-   * Add a new Job(layer) pmtp tje stack.
+   * Add a new Job(layer) to the stack.
    * @param step The current step to add the job to.
    * @param layer The job to be added
    */
 
-  async format(text: string, path = "", filename?: string, options: { installer?: boolean; banner?: string | string[] } = {}) {
+  async format(text: string, path = "", filename?: string, options: { installer?: boolean; agent?: boolean; compress?: boolean; banner?: string | string[] } = {}) {
     const ctx: Context = {
       cache: new Map(),
       input: text,
       path,
       filename,
       installer: options.installer,
+      agent: options.agent,
+      compress: options.compress,
       banner: options.banner,
       output: "",
       combined: "",

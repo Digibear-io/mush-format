@@ -13,7 +13,7 @@ export class LLMHealer {
         // Initialize Gemini model
         this.model = new ChatGoogleGenerativeAI({
             model: "gemini-2.5-flash",
-            temperature: 0.1, // Low temperature for deterministic fixes
+            temperature: 0, // Deterministic fixes
         });
         
         this.kb = new MUXKnowledgeBase();
@@ -33,27 +33,16 @@ export class LLMHealer {
         // Search knowledge base for relevant context
         const context = await this.getContext(line.text, error);
         
-        const prompt = `You are a MUSH code expert. Fix the following MUSHcode line that has a syntax error.
+        const prompt = `Fix this MUSHcode line. Rules:
+1. Keep [] around functions that return values (get, setr, add, etc)
+2. @ commands (@pemit, @force, etc) must NOT be in []
+3. Move @ commands outside brackets with semicolon
 
-${context ? `## Relevant MUX Documentation:\n${context}\n` : ''}
+Error: ${error.message}
+Line: ${line.text}
+${context ? `Context: ${context}` : ''}
 
-## Error Details:
-${error.message}
-
-## Problematic Line:
-\`\`\`
-${line.text}
-\`\`\`
-
-## Instructions:
-1. PRESERVE brackets [] around functions that return values (like setr, get, add, etc.)
-2. @ commands (like @pemit, @force, @switch) should NOT be inside brackets []
-3. If a @ command is inside a bracket, close the bracket before it and add a semicolon
-4. Example: [setr(0,get(%#/name@pemit %#=[r(0)]] → [setr(0,get(%#/name))]; @pemit %#=[r(0)]
-5. Do NOT remove brackets from functions - only move @ commands outside
-6. Return ONLY the fixed line, no explanations or markdown
-
-Fixed line:`;
+Return ONLY the fixed line:`;
 
         try {
             const response = await this.model.invoke([

@@ -1,6 +1,8 @@
 import { FormatterState } from '../graph';
 import { Line } from '../../formatter';
 import { LLMHealer } from '../healer';
+import * as readline from 'readline';
+import { log, fmt, Spinner } from '../../utils/colors';
 
 // Create singleton LLM healer instance
 let llmHealer: LLMHealer | null = null;
@@ -10,7 +12,7 @@ let llmHealer: LLMHealer | null = null;
  * Detects structural issues and uses heuristics (or LLM) to propose fixes.
  */
 export async function selfHealingLinterNode(state: FormatterState): Promise<Partial<FormatterState>> {
-  console.log("--- Self-Healing Linter Start ---");
+  log.subsection('Self-Healing Linter');
 
   // Assuming `parser` node populated `formattedLines`
   const lines = state.formattedLines || [];
@@ -87,11 +89,11 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
     const simpleErrors = errors.filter(e => !e.complex);
     
     if (complexErrors.length > 0) {
-        console.log(`⚠️  Detected ${complexErrors.length} COMPLEX errors that need LLM healing.`);
+        log.warning(`Detected ${fmt.number(complexErrors.length)} COMPLEX errors that need LLM healing`);
     }
     
     if (simpleErrors.length > 0) {
-        console.log(`Detected ${simpleErrors.length} simple errors. Attempting heuristic healing...`);
+        log.info(`Detected ${fmt.number(simpleErrors.length)} simple errors. Attempting heuristic healing...`);
     }
     
     let currentLines = [...lines];
@@ -113,7 +115,6 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
                 text += '"';
                 healedCount++;
                 modified = true;
-                console.log(`[Heuristic] Line ${l.line}: Appended missing '"'`);
             }
             
             if (modified) {
@@ -124,17 +125,17 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
         });
         
         if (healedCount > 0) {
-            console.log(`[Heuristic] Healed ${healedCount} simple errors.`);
+            log.success(`Healed ${fmt.number(healedCount)} simple errors using heuristics`);
         }
     }
     
     // Step 2: Try LLM healing for complex errors
     if (complexErrors.length > 0) {
-        console.log(`⚠️  Attempting LLM healing for complex errors...`);
+        log.step('Attempting LLM healing for complex errors...');
         
         if (!process.env.GOOGLE_API_KEY) {
-            console.log(`⚠️  GOOGLE_API_KEY not set. Cannot perform LLM healing.`);
-            console.log(`   Set your API key in .env.local: GOOGLE_API_KEY=your_key_here`);
+            log.error('GOOGLE_API_KEY not set. Cannot perform LLM healing.');
+            log.detail('Set your API key in .env.local: GOOGLE_API_KEY=your_key_here');
             
             // Return with heuristic fixes but complex errors remaining
             const reCheckErrors = checkLines(currentLines);
@@ -152,23 +153,103 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
             await llmHealer.initialize();
         }
         
-        console.log(`[LLM] Processing ${complexErrors.length} lines with complex errors...`);
+        log.info(`Processing ${fmt.number(complexErrors.length)} lines with complex errors...`);
         
-        // Heal lines with complex errors
-        const healedLines = await Promise.all(currentLines.map(async (l) => {
-            const error = complexErrors.find(e => e.line === l.line);
+
+        // Create a map for $O(1)$ error lookup
+        const errorMap = new Map(complexErrors.map(e => [e.line, e]));
+
+        const renderProgressBar = (count: number, totalCount: number, status: string) => {
+          if (!process.stdout.isTTY) {
+            // Non-TTY: just print periodic updates
+            if (count === 0 || count === totalCount || count % Math.max(1, Math.floor(totalCount / 10)) === 0) {
+              console.log(`[Progress] ${Math.floor((count / totalCount) * 100)}% | ${status}`);
+            }
+            return;
+          }
+
+          const width = 30;
+          const progress = Math.min(width, Math.floor((count / totalCount) * width));
+          const pct = Math.floor((count / totalCount) * 100);
+          const bar = `[${'='.repeat(progress)}${' '.repeat(width - progress)}]`;
+          
+          // Clear line and move cursor to beginning
+          readline.cursorTo(process.stdout, 0);
+          readline.clearLine(process.stdout, 0);
+          process.stdout.write(`${bar} ${pct}% | ${status}`);
+        };
+
+
+        renderProgressBar(0, complexErrors.length, `Starting healing...`);
+
+        // Heal lines with complex errors IN PARALLEL BATCHES
+        const healedLines = [];
+        let errorsProcessed = 0;
+        let healedCount = 0;
+        
+        // Batch size for parallel processing (increased for faster healing)
+        const BATCH_SIZE = 30;
+        
+        // Collect all errors to heal
+        const errorsToHeal: Array<{line: Line, error: any, originalIndex: number}> = [];
+        currentLines.forEach((l, idx) => {
+            const error = errorMap.get(l.line);
             if (error) {
-                try {
-                    const fixed = await llmHealer!.healLine(l, error);
-                    console.log(`[LLM] Line ${l.line}: Fixed!`);
-                    return { ...l, text: fixed };
-                } catch (err) {
-                    console.error(`[LLM] Failed to heal line ${l.line}:`, err);
-                    return l;
+                errorsToHeal.push({ line: l, error, originalIndex: idx });
+            }
+        });
+        
+        // Process in batches
+        const healedMap = new Map<number, string>();
+        for (let i = 0; i < errorsToHeal.length; i += BATCH_SIZE) {
+            const batch = errorsToHeal.slice(i, Math.min(i + BATCH_SIZE, errorsToHeal.length));
+            const batchStart = i + 1;
+            const batchEnd = Math.min(i + BATCH_SIZE, errorsToHeal.length);
+            
+            renderProgressBar(errorsProcessed, complexErrors.length, `Healing batch ${batchStart}-${batchEnd}/${complexErrors.length}...`);
+            
+            // Heal all errors in this batch in parallel
+            const batchResults = await Promise.allSettled(
+                batch.map(async ({line, error, originalIndex}) => {
+                    try {
+                        const fixed = await llmHealer!.healLine(line, error);
+                        return { success: true, fixed, originalIndex };
+                    } catch (err) {
+                        return { success: false, originalIndex };
+                    }
+                })
+            );
+            
+            // Process results and store in map
+            for (let j = 0; j < batchResults.length; j++) {
+                const result = batchResults[j];
+                
+                if (result.status === 'fulfilled') {
+                    if (result.value.success && result.value.fixed) {
+                        healedMap.set(result.value.originalIndex, result.value.fixed);
+                        healedCount++;
+                    }
+                    errorsProcessed++;
                 }
             }
-            return l;
-        }));
+            
+            // Update progress after batch completes
+            renderProgressBar(errorsProcessed, complexErrors.length, `✓ Batch ${batchStart}-${batchEnd} complete | ${errorsProcessed}/${complexErrors.length} processed (${healedCount} healed)`);
+        }
+        
+        // Rebuild lines array with healed versions
+        for (let i = 0; i < currentLines.length; i++) {
+            const l = currentLines[i];
+            if (healedMap.has(i)) {
+                healedLines.push({ ...l, text: healedMap.get(i)! });
+            } else {
+                healedLines.push(l);
+            }
+        }
+
+
+
+        process.stdout.write('\n');
         
         currentLines = healedLines;
     }
@@ -177,14 +258,14 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
     const reCheckErrors = checkLines(currentLines);
     
     if (reCheckErrors.length === 0) {
-        console.log(`✅ Successfully healed all errors!`);
+        log.success('Successfully healed all errors!');
         return {
              formattedLines: currentLines,
              lintErrors: [],
              iterationCount: 1
         };
     } else {
-        console.log(`⚠️  ${reCheckErrors.length} errors remain after healing.`);
+        log.warning(`${fmt.number(reCheckErrors.length)} errors remain after healing`);
         return {
              formattedLines: currentLines,
              lintErrors: reCheckErrors,
@@ -194,7 +275,7 @@ export async function selfHealingLinterNode(state: FormatterState): Promise<Part
   }
   
   if (errors.length === 0) {
-      console.log("Lint check passed.");
+      log.success('Lint check passed');
   }
 
   return {

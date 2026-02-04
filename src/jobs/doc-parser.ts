@@ -55,7 +55,6 @@ export default async (ctx: Context, next: Next) => {
   }
 
   ctx.scratch.current = finalLines;
-  ctx.output = finalLines.map(l => l.text).join("\n");
 
   next();
 };

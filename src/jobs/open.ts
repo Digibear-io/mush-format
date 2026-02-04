@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import _fetch from "isomorphic-fetch";
-import { dirname, join, isAbsolute } from "path";
+import { join, dirname, isAbsolute, resolve } from "path";
 import validURL from "valid-url";
 
 import { Context, Next, Line } from "../formatter";
@@ -38,13 +38,13 @@ export default async (ctx: Context, next: Next) => {
       const gitPath = filePath.substring(4); // Remove 'git:'
       let [repoPart, branchPart] = gitPath.split("@");
       let branch = "main";
-      let path = "";
+      let p = "";
 
       if (branchPart) {
           const slashIdx = branchPart.indexOf("/");
           if (slashIdx !== -1) {
               branch = branchPart.substring(0, slashIdx);
-              path = branchPart.substring(slashIdx); // includes leading /
+              p = branchPart.substring(slashIdx); // includes leading /
           } else {
               branch = branchPart;
           }
@@ -54,22 +54,17 @@ export default async (ctx: Context, next: Next) => {
            // user/repo/path/to/file
            if (parts.length > 2) {
                repoPart = parts.slice(0, 2).join("/");
-               path = "/" + parts.slice(2).join("/");
+               p = "/" + parts.slice(2).join("/");
            }
       }
       
-      if (!path || path === "/") path = "/index.mush";
+      if (!p || p === "/") p = "/index.mush";
       
       // Encode path parts to handle spaces
-      const encodedPath = path.split('/').map(p => encodeURIComponent(p)).join('/');
+      const encodedPath = p.split('/').map(part => encodeURIComponent(part)).join('/');
       
       // Reassign to https url
-      filePath = `https://raw.githubusercontent.com/${repoPart}/${branch}${path}`;
-       // Actually, we need to be careful not to double slash or encode the separators.
-       // simple replace of spaces might be enough for now, or proper encoding.
-       // Let's use `new URL` to be safe if possible, but we are constructing a string.
-       // raw.githubusercontent.com URIs often just need %20 for spaces.
-       filePath = `https://raw.githubusercontent.com/${repoPart}/${branch}${path.replace(/ /g, '%20')}`;
+      filePath = `https://raw.githubusercontent.com/${repoPart}/${branch}${p.replace(/ /g, '%20')}`;
     }
 
     if (validURL.isUri(filePath)) {
@@ -107,13 +102,16 @@ export default async (ctx: Context, next: Next) => {
         throw new Error(`Circular dependency detected: ${fullPath}`);
       }
       visitedFiles.add(fullPath);
+      
+      // Update context with primary file info if not already set or if it's the root call
+      if (!ctx.path) ctx.path = resolve(dirname(fullPath));
+      if (!ctx.filename) ctx.filename = fullPath.split("/").pop();
+      
       ctx.scratch.base = dirname(fullPath);
       const text = await readFile(fullPath, "utf8");
       return await scan(text, fullPath, visitedFiles);
     } else {
       // Treat as raw text content if not found as file
-      // If filePath was passed as the initial input, it might be raw MUSH code.
-      // We'll use a placeholder name if it's huge, or ctx.path if set.
       const origin = ctx.filename ?? ctx.path ?? "cwd/input.mu"; 
       return await scan(filePath, origin, visitedFiles);
     }
@@ -121,7 +119,7 @@ export default async (ctx: Context, next: Next) => {
 
   async function scan(text: string, currentFile: string, visitedFiles: Set<string>): Promise<Line[]> {
     const rawLines = text.split("\n");
-    let output: Line[] = [];
+    let outputLines: Line[] = [];
 
     for (let i = 0; i < rawLines.length; i++) {
         const lineText = rawLines[i];
@@ -130,23 +128,16 @@ export default async (ctx: Context, next: Next) => {
         const fileMatch = lineText.match(/#file\s+?(.*)/i);
         if (fileMatch) {
             const nestedPath = fileMatch[1];
-             // The original behavior was scanning the file content and wrapping in @@ and -
-             // We need to resolve nestedPath. 
-             // Logic in generic loadFile attempts resolution.
-             
-             // Temporarily set base for nested load? 
-             // loadFile updates ctx.scratch.base.
-             // We should maybe save/restore base? 
              const oldBase = ctx.scratch.base;
              
              try {
                 const loadedLines = await loadFile(nestedPath, visitedFiles);
                 
-                output.push({ text: "-", file: currentFile, line: i + 1 });
+                outputLines.push({ text: "-", file: currentFile, line: i + 1 });
                 loadedLines.forEach(l => {
-                    output.push({ text: `@@ ${l.text}`, file: l.file, line: l.line });
+                    outputLines.push({ text: `@@ ${l.text}`, file: l.file, line: l.line });
                 });
-                output.push({ text: "-", file: currentFile, line: i + 1 });
+                outputLines.push({ text: "-", file: currentFile, line: i + 1 });
                 
              } finally {
                  ctx.scratch.base = oldBase;
@@ -158,15 +149,8 @@ export default async (ctx: Context, next: Next) => {
         const includeMatch = lineText.match(/#include\s+(.*)/i);
         if (includeMatch) {
             const includedFile = includeMatch[1];
-            // Resolve path relative to currentFile if it's a file
-            // But loadFile relies on ctx.scratch.base. 
-            // We should ensure ctx.scratch.base is correct for the currentFile.
-            // If currentFile is a URL, base should be URL dir.
-            // If local, dirname.
-            
             const oldBase = ctx.scratch.base;
             try {
-                // Determine base for this include
                 let includeBase = ctx.scratch.base;
                 if (validURL.isUri(currentFile)) {
                     includeBase = dirname(currentFile);
@@ -174,11 +158,10 @@ export default async (ctx: Context, next: Next) => {
                     includeBase = dirname(currentFile);
                 }
                 
-                // We set/override ctx.scratch.base so loadFile uses it for resolution
                 if (includeBase) ctx.scratch.base = includeBase;
 
                 const loadedLines = await loadFile(includedFile, visitedFiles);
-                output.push(...loadedLines);
+                outputLines.push(...loadedLines);
             } finally {
                  ctx.scratch.base = oldBase;
             }
@@ -193,7 +176,6 @@ export default async (ctx: Context, next: Next) => {
              
              const oldBase = ctx.scratch.base;
              try {
-                // Determine base - same logic as include
                 let includeBase = ctx.scratch.base;
                 if (validURL.isUri(currentFile)) {
                     includeBase = dirname(currentFile);
@@ -204,10 +186,8 @@ export default async (ctx: Context, next: Next) => {
                 if (includeBase) ctx.scratch.base = includeBase;
 
                 const loadedLines = await loadFile(importedFile, visitedFiles);
-                
-                // TRANSFORM
                 const transformedLines = applyNamespace(loadedLines, alias);
-                output.push(...transformedLines);
+                outputLines.push(...transformedLines);
                 
              } finally {
                  ctx.scratch.base = oldBase;
@@ -216,38 +196,30 @@ export default async (ctx: Context, next: Next) => {
         }
 
         // Handle Metadata
-        // #author name
-        // #version 1.0.0
-        // #desc Description
         const metaMatch = lineText.match(/^#(author|version|desc|description)\s+(.*)/i);
         if (metaMatch) {
             const name = metaMatch[1].toLowerCase();
             const value = metaMatch[2].trim();
             ctx.headers.push({ name, value });
-            
-            // We strip metadata lines from output? 
-            // Usually metadata is not code.
             continue;
         }
 
-        output.push({
+        outputLines.push({
             text: lineText,
             file: currentFile,
             line: i + 1
         });
     }
 
-    return output;
+    return outputLines;
   }
 
   // Initial load
   ctx.scratch.current = await loadFile(ctx.input);
   
   if (ctx.scratch.current) {
-    // Flatten lines to string for backward compat cache/combined? 
-    // ctx.combined is supposed to be string.
-    ctx.combined = ctx.scratch.current.map(l => l.text).join('\n');
-    ctx.scratch.data = ctx.combined; // Original logic
+    ctx.combined = (ctx.scratch.current as Line[]).map(l => l.text).join('\n');
+    ctx.scratch.data = ctx.combined; 
   }
   
   next();
